@@ -32,8 +32,10 @@ public class UnCliente implements Runnable {
                 }
  
                 for (UnCliente cliente : ServidorMulti.clientes.values()) {
-                    cliente.salida.writeUTF(mensaje);
-                }
+    if (cliente != this) { 
+        cliente.salida.writeUTF(mensaje);
+    }
+}
  
             } catch (IOException ex) {
             }
