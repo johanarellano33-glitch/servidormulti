@@ -1,4 +1,4 @@
-package clientemulti;
+package com.mycompany.clientemulti;
 import java.io.BufferedReader;
 import java.io.DataOutputStream;
 import java.io.IOException;

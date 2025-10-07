@@ -1,4 +1,4 @@
-package servidormulti;
+package com.mycompany.servidormulti;
  
 import java.io.IOException;
 import java.net.ServerSocket;
