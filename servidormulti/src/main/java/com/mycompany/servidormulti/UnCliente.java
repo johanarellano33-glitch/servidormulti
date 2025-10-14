@@ -1,24 +1,22 @@
 package com.mycompany.servidormulti;
-import java.io.BufferedReader;
+
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
-import java.io.InputStreamReader;
 import java.net.Socket;
-import java.util.Map; // Importación para el HashMap de clientes
+import java.util.Map;
 
 public class UnCliente implements Runnable {
+    
     final DataOutputStream salida;
-    // final BufferedReader teclado = new BufferedReader(new InputStreamReader(System.in)); // No necesario en el servidor
     final DataInputStream entrada;
     
-    // CAMPOS NUEVOS PARA EL ESTADO
-    private final String idCliente; // ID para identificarlo
-    private int mensajesEnviados = 0; // Contador de mensajes antes de autenticación
-    private boolean autenticado = false; // Estado de autenticación
+    private String idCliente; // ID temporal (número) o Nombre de usuario
+    private int mensajesEnviados = 0;
+    private boolean autenticado = false;
     
-    UnCliente(Socket s, String id) throws IOException { // CAMBIO: Recibe el ID
-        this.idCliente = id; // Guardamos el ID
+    UnCliente(Socket s, String id) throws IOException {
+        this.idCliente = id;
         salida = new DataOutputStream(s.getOutputStream());
         entrada = new DataInputStream(s.getInputStream());
     }
@@ -26,46 +24,64 @@ public class UnCliente implements Runnable {
     @Override
     public void run() {
         try {
-            // Mensaje de bienvenida con instrucciones
-            salida.writeUTF("Bienvenido. Tu ID es: " + idCliente + ". Tienes 3 mensajes gratis. Usa 'LOGIN nombre' para autenticarte.");
+            salida.writeUTF("Bienvenido. Tu ID es: " + idCliente + 
+                             ". Tienes 3 mensajes gratis. Usa 'REGISTER nombre password' o 'LOGIN nombre password'.");
             
             while (true) {
                 String mensaje = entrada.readUTF();
                 
-                // --- 1. Manejo de comandos (LOGIN) ---
-                if (mensaje.startsWith("LOGIN ")) {
-                    if (!autenticado) {
-                        String nombre = mensaje.substring(6).trim();
-                        if (!nombre.isEmpty()) {
-                            autenticado = true;
-                            // Reemplazamos el ID por el nombre de usuario
-                            // Nota: Para simplificar, no estamos verificando si el nombre ya existe.
-                            ServidorMulti.clientes.remove(idCliente);
-                            ServidorMulti.clientes.put(nombre, this); // El nuevo ID es el nombre
-                            
-                            // El idCliente ahora es el nombre de usuario
-                            // idCliente = nombre; // Esto NO funciona porque idCliente es final. 
-                            // Deberíamos hacer idCliente no final para este cambio. 
-                            // Para mantener el código simple, seguiremos usando el ID original para este objeto.
-                            
-                            salida.writeUTF("¡Autenticación exitosa! Eres: " + nombre + ". Tienes mensajes ilimitados.");
-                            System.out.println("Cliente ID " + idCliente + " se autenticó como " + nombre);
-                        } else {
-                            salida.writeUTF("Error: El nombre de usuario no puede estar vacío.");
-                        }
-                    } else {
-                        salida.writeUTF("Ya estás autenticado.");
+                String[] partesComando = mensaje.split(" ", 3);
+                String comando = partesComando.length > 0 ? partesComando[0].toUpperCase() : "";
+
+                // --- 1. Manejo de comandos (REGISTER / LOGIN) ---
+                if (comando.equals("REGISTER") || comando.equals("LOGIN")) {
+                    if (autenticado) {
+                        salida.writeUTF("Ya estás autenticado como: " + idCliente);
+                        continue;
                     }
-                    continue; // No es un mensaje para broadcast/privado
+
+                    if (partesComando.length != 3) {
+                        salida.writeUTF("Error de sintaxis. Usa: " + comando + " nombre password");
+                        continue;
+                    }
+                    
+                    String nombre = partesComando[1];
+                    String password = partesComando[2];
+                    
+                    if (comando.equals("REGISTER")) {
+                        if (ServidorMulti.registrarUsuario(nombre, password)) {
+                            salida.writeUTF("¡Registro exitoso! Ahora usa LOGIN.");
+                        } else {
+                            salida.writeUTF("Error: El nombre de usuario '" + nombre + "' ya existe.");
+                        }
+                    } else if (comando.equals("LOGIN")) {
+                        if (ServidorMulti.verificarCredenciales(nombre, password)) {
+                            
+                            autenticado = true;
+                            // 1. Quitar el ID temporal del mapa
+                            ServidorMulti.clientes.remove(idCliente); 
+                            // 2. Asignar el nombre de usuario como ID
+                            idCliente = nombre; 
+                            // 3. Volver a meter el objeto en el mapa con el nuevo ID (nombre)
+                            ServidorMulti.clientes.put(idCliente, this); 
+                            
+                            salida.writeUTF("¡Inicio de sesión exitoso! Eres: " + idCliente + ". Tienes mensajes ilimitados.");
+                            System.out.println("Cliente ID antiguo se autenticó como " + nombre);
+                            
+                        } else {
+                            salida.writeUTF("Error de inicio de sesión. Credenciales incorrectas.");
+                        }
+                    }
+                    continue; 
                 }
                 
                 // --- 2. Verificación de permisos para enviar ---
                 if (!autenticado && mensajesEnviados >= 3) {
-                    salida.writeUTF("Límite de 3 mensajes alcanzado. Debes autenticarte (ej: LOGIN nombre) para enviar más mensajes.");
-                    continue; // Impedir que envíe el mensaje
+                    salida.writeUTF("Límite de 3 mensajes alcanzado. Debes autenticarte (ej: LOGIN nombre password) para enviar más.");
+                    continue;
                 }
                 
-                // El mensaje se cuenta SÓLO si es enviado (público o privado)
+                // El mensaje se cuenta SÓLO si es un mensaje real (no un comando fallido o bloqueado)
                 if (!autenticado) {
                     mensajesEnviados++;
                 }
@@ -75,8 +91,7 @@ public class UnCliente implements Runnable {
                     String[] partes = mensaje.split(" ", 2);
                     if (partes.length < 2) {
                          salida.writeUTF("Formato privado incorrecto. Usa: @ID_o_NOMBRE mensaje");
-                         // Revertir el contador si falló el formato
-                         if (!autenticado) mensajesEnviados--; 
+                         if (!autenticado) mensajesEnviados--;
                          continue;
                     }
                     
@@ -84,30 +99,27 @@ public class UnCliente implements Runnable {
                     UnCliente clienteDestino = ServidorMulti.clientes.get(aQuien);
                     
                     if (clienteDestino != null) {
-                        String remitente = autenticado ? "Autenticado" : idCliente;
+                        String remitente = idCliente; 
                         String mensajeConRemitente = "(PRIVADO de " + remitente + "): " + partes[1];
                         clienteDestino.salida.writeUTF(mensajeConRemitente);
                         this.salida.writeUTF("(Mensaje enviado a " + aQuien + ")");
                     } else {
                         salida.writeUTF("Error: Cliente con ID/Nombre " + aQuien + " no encontrado.");
-                        // Revertir el contador si falló la búsqueda
                         if (!autenticado) mensajesEnviados--;
                     }
                     
                 } else {
                     // --- 4. Manejo de mensajes públicos (Broadcast) ---
-                    String remitente = autenticado ? "Autenticado" : idCliente;
+                    String remitente = idCliente;
                     String mensajeBroadcast = "[" + remitente + "]: " + mensaje;
                     
                     for (Map.Entry<String, UnCliente> entry : ServidorMulti.clientes.entrySet()) {
                         UnCliente cliente = entry.getValue();
-                        // Enviamos a todos EXCEPTO a si mismo
-                        if (cliente != this) { 
+                        if (cliente != this) {
                             cliente.salida.writeUTF(mensajeBroadcast);
                         }
                     }
                     
-                    // Informar al cliente que no está autenticado cuántos mensajes le quedan
                     if (!autenticado) {
                         salida.writeUTF("Mensajes restantes: " + (3 - mensajesEnviados));
                     }
@@ -115,9 +127,8 @@ public class UnCliente implements Runnable {
             }
         } catch (IOException ex) {
             // Manejo de desconexión: Limpiamos la lista de clientes.
-            System.out.println("Cliente ID " + idCliente + " desconectado.");
-            // Buscamos y removemos el cliente, ya sea por ID o por Nombre (si implementáramos el cambio de llave en el mapa)
-            ServidorMulti.clientes.remove(idCliente); 
+            System.out.println("Cliente " + idCliente + " desconectado.");
+            ServidorMulti.clientes.remove(idCliente);
         }
     }
 }
