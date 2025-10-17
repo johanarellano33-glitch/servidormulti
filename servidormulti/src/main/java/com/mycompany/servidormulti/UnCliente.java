@@ -65,7 +65,7 @@ public class UnCliente implements Runnable {
                 String[] partesComando = mensaje.split(" ", 3);
                 String comando = partesComando.length > 0 ? partesComando[0].toUpperCase() : "";
 
-                // --- 1. Comando HELP ---
+           
                 if (comando.equals("HELP")) {
                     if (!autenticado) {
                         salida.writeUTF("Debes iniciar sesión para ver los comandos. Usa: LOGIN nombre password");
@@ -75,7 +75,7 @@ public class UnCliente implements Runnable {
                     continue;
                 }
 
-                // --- 2. Comando USERS (listar todos los usuarios registrados) ---
+               
                 if (comando.equals("USERS")) {
                     if (!autenticado) {
                         salida.writeUTF("Error: Debes estar autenticado para ver la lista de usuarios.");
@@ -101,7 +101,7 @@ public class UnCliente implements Runnable {
                     continue;
                 }
 
-                // --- 3. Comando ONLINE (listar usuarios conectados) ---
+               
                 if (comando.equals("ONLINE")) {
                     if (!autenticado) {
                         salida.writeUTF("Error: Debes estar autenticado para ver usuarios conectados.");
@@ -123,7 +123,7 @@ public class UnCliente implements Runnable {
                     continue;
                 }
 
-                // --- 4. Manejo de comandos REGISTER / LOGIN ---
+               
                 if (comando.equals("REGISTER") || comando.equals("LOGIN")) {
                     if (autenticado) {
                         salida.writeUTF("Ya estás autenticado como: " + idCliente);
@@ -160,7 +160,7 @@ public class UnCliente implements Runnable {
                     continue;
                 }
                 
-                // --- 5. Comandos BLOCK / UNBLOCK / BLOCKLIST ---
+               
                 if (comando.equals("BLOCK")) {
                     if (!autenticado) {
                         salida.writeUTF("Error: Debes estar autenticado para bloquear usuarios.");

@@ -10,12 +10,11 @@ public class DatabaseManager {
     private static final String DB_URL = "jdbc:sqlite:chat.db";
     private static Connection conn = null;
 
-    /**
-     * Inicializa la conexión y crea las tablas necesarias
-     */
+    
     public static void inicializar() {
         try {
             conn = DriverManager.getConnection(DB_URL);
+            conn.setAutoCommit(true); 
             crearTablas();
             System.out.println("Base de datos inicializada correctamente.");
         } catch (SQLException e) {
@@ -23,9 +22,7 @@ public class DatabaseManager {
         }
     }
 
-    /**
-     * Crea las tablas usuarios y bloqueos si no existen
-     */
+    
     private static void crearTablas() throws SQLException {
         String sqlUsuarios = "CREATE TABLE IF NOT EXISTS usuarios ("
                 + "id INTEGER PRIMARY KEY AUTOINCREMENT, "
@@ -48,9 +45,7 @@ public class DatabaseManager {
         }
     }
 
-    /**
-     * Registra un nuevo usuario en la base de datos
-     */
+   
     public static boolean registrarUsuario(String nombre, String password) {
         String sql = "INSERT INTO usuarios (nombre, password) VALUES (?, ?)";
         
@@ -68,9 +63,7 @@ public class DatabaseManager {
         }
     }
 
-    /**
-     * Verifica las credenciales de un usuario
-     */
+    
     public static boolean verificarCredenciales(String nombre, String password) {
         String sql = "SELECT password FROM usuarios WHERE nombre = ?";
         
@@ -89,9 +82,7 @@ public class DatabaseManager {
         }
     }
 
-    /**
-     * Verifica si un usuario existe en la base de datos
-     */
+   
     public static boolean usuarioExiste(String nombre) {
         String sql = "SELECT 1 FROM usuarios WHERE nombre = ?";
         
@@ -105,9 +96,7 @@ public class DatabaseManager {
         }
     }
 
-    /**
-     * Obtiene la lista de todos los usuarios registrados
-     */
+    
     public static List<String> obtenerTodosLosUsuarios() {
         List<String> usuarios = new ArrayList<>();
         String sql = "SELECT nombre FROM usuarios ORDER BY nombre";
@@ -125,9 +114,7 @@ public class DatabaseManager {
         return usuarios;
     }
 
-    /**
-     * Obtiene la lista de usuarios conectados actualmente
-     */
+   
     public static List<String> obtenerUsuariosConectados(String usuarioActual) {
         List<String> conectados = new ArrayList<>();
         
@@ -140,9 +127,7 @@ public class DatabaseManager {
         return conectados;
     }
 
-    /**
-     * Bloquea un usuario
-     */
+    
     public static boolean bloquearUsuario(String usuarioBloqueador, String usuarioBloqueado) {
         if (usuarioBloqueador.equals(usuarioBloqueado)) {
             return false;
@@ -164,9 +149,7 @@ public class DatabaseManager {
         }
     }
 
-    /**
-     * Desbloquea un usuario
-     */
+    
     public static boolean desbloquearUsuario(String usuarioBloqueador, String usuarioBloqueado) {
         String sql = "DELETE FROM bloqueos WHERE usuario_bloqueador = ? AND usuario_bloqueado = ?";
         
@@ -181,9 +164,6 @@ public class DatabaseManager {
         }
     }
 
-    /**
-     * Verifica si un usuario tiene bloqueado a otro
-     */
     public static boolean estaBloqueado(String usuarioBloqueador, String usuarioBloqueado) {
         String sql = "SELECT 1 FROM bloqueos WHERE usuario_bloqueador = ? AND usuario_bloqueado = ?";
         
@@ -198,9 +178,7 @@ public class DatabaseManager {
         }
     }
 
-    /**
-     * Obtiene la lista de usuarios bloqueados por un usuario
-     */
+   
     public static Set<String> obtenerBloqueados(String usuarioBloqueador) {
         Set<String> bloqueados = new HashSet<>();
         String sql = "SELECT usuario_bloqueado FROM bloqueos WHERE usuario_bloqueador = ?";
@@ -219,9 +197,7 @@ public class DatabaseManager {
         return bloqueados;
     }
 
-    /**
-     * Cierra la conexión a la base de datos
-     */
+  
     public static void cerrarConexion() {
         if (conn != null) {
             try {
