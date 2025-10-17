@@ -1,0 +1,211 @@
+package com.mycompany.servidormulti;
+
+import java.sql.*;
+import java.util.HashSet;
+import java.util.Set;
+import java.util.ArrayList;
+import java.util.List;
+
+public class DatabaseManager {
+    private static final String DB_URL = "jdbc:sqlite:chat.db";
+    private static Connection conn = null;
+
+    
+    public static void inicializar() {
+        try {
+            conn = DriverManager.getConnection(DB_URL);
+            conn.setAutoCommit(true); 
+            crearTablas();
+            System.out.println("Base de datos inicializada correctamente.");
+        } catch (SQLException e) {
+            System.err.println("Error al inicializar la base de datos: " + e.getMessage());
+        }
+    }
+
+    
+    private static void crearTablas() throws SQLException {
+        String sqlUsuarios = "CREATE TABLE IF NOT EXISTS usuarios ("
+                + "id INTEGER PRIMARY KEY AUTOINCREMENT, "
+                + "nombre TEXT UNIQUE NOT NULL, "
+                + "password TEXT NOT NULL"
+                + ");";
+
+        String sqlBloqueos = "CREATE TABLE IF NOT EXISTS bloqueos ("
+                + "id INTEGER PRIMARY KEY AUTOINCREMENT, "
+                + "usuario_bloqueador TEXT NOT NULL, "
+                + "usuario_bloqueado TEXT NOT NULL, "
+                + "FOREIGN KEY (usuario_bloqueador) REFERENCES usuarios(nombre), "
+                + "FOREIGN KEY (usuario_bloqueado) REFERENCES usuarios(nombre), "
+                + "UNIQUE(usuario_bloqueador, usuario_bloqueado)"
+                + ");";
+
+        try (Statement stmt = conn.createStatement()) {
+            stmt.execute(sqlUsuarios);
+            stmt.execute(sqlBloqueos);
+        }
+    }
+
+   
+    public static boolean registrarUsuario(String nombre, String password) {
+        String sql = "INSERT INTO usuarios (nombre, password) VALUES (?, ?)";
+        
+        try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setString(1, nombre);
+            pstmt.setString(2, password);
+            pstmt.executeUpdate();
+            return true;
+        } catch (SQLException e) {
+            if (e.getErrorCode() == 19) {
+                return false;
+            }
+            System.err.println("Error al registrar usuario: " + e.getMessage());
+            return false;
+        }
+    }
+
+    
+    public static boolean verificarCredenciales(String nombre, String password) {
+        String sql = "SELECT password FROM usuarios WHERE nombre = ?";
+        
+        try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setString(1, nombre);
+            ResultSet rs = pstmt.executeQuery();
+            
+            if (rs.next()) {
+                String passwordGuardado = rs.getString("password");
+                return passwordGuardado.equals(password);
+            }
+            return false;
+        } catch (SQLException e) {
+            System.err.println("Error al verificar credenciales: " + e.getMessage());
+            return false;
+        }
+    }
+
+   
+    public static boolean usuarioExiste(String nombre) {
+        String sql = "SELECT 1 FROM usuarios WHERE nombre = ?";
+        
+        try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setString(1, nombre);
+            ResultSet rs = pstmt.executeQuery();
+            return rs.next();
+        } catch (SQLException e) {
+            System.err.println("Error al verificar existencia de usuario: " + e.getMessage());
+            return false;
+        }
+    }
+
+    
+    public static List<String> obtenerTodosLosUsuarios() {
+        List<String> usuarios = new ArrayList<>();
+        String sql = "SELECT nombre FROM usuarios ORDER BY nombre";
+        
+        try (Statement stmt = conn.createStatement();
+             ResultSet rs = stmt.executeQuery(sql)) {
+            
+            while (rs.next()) {
+                usuarios.add(rs.getString("nombre"));
+            }
+        } catch (SQLException e) {
+            System.err.println("Error al obtener lista de usuarios: " + e.getMessage());
+        }
+        
+        return usuarios;
+    }
+
+   
+    public static List<String> obtenerUsuariosConectados(String usuarioActual) {
+        List<String> conectados = new ArrayList<>();
+        
+        for (String nombre : ServidorMulti.clientes.keySet()) {
+            if (!nombre.matches("\\d+") && !nombre.equals(usuarioActual)) {
+                conectados.add(nombre);
+            }
+        }
+        
+        return conectados;
+    }
+
+    
+    public static boolean bloquearUsuario(String usuarioBloqueador, String usuarioBloqueado) {
+        if (usuarioBloqueador.equals(usuarioBloqueado)) {
+            return false;
+        }
+
+        String sql = "INSERT INTO bloqueos (usuario_bloqueador, usuario_bloqueado) VALUES (?, ?)";
+        
+        try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setString(1, usuarioBloqueador);
+            pstmt.setString(2, usuarioBloqueado);
+            pstmt.executeUpdate();
+            return true;
+        } catch (SQLException e) {
+            if (e.getErrorCode() == 19) {
+                return false;
+            }
+            System.err.println("Error al bloquear usuario: " + e.getMessage());
+            return false;
+        }
+    }
+
+    
+    public static boolean desbloquearUsuario(String usuarioBloqueador, String usuarioBloqueado) {
+        String sql = "DELETE FROM bloqueos WHERE usuario_bloqueador = ? AND usuario_bloqueado = ?";
+        
+        try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setString(1, usuarioBloqueador);
+            pstmt.setString(2, usuarioBloqueado);
+            int filasAfectadas = pstmt.executeUpdate();
+            return filasAfectadas > 0;
+        } catch (SQLException e) {
+            System.err.println("Error al desbloquear usuario: " + e.getMessage());
+            return false;
+        }
+    }
+
+    public static boolean estaBloqueado(String usuarioBloqueador, String usuarioBloqueado) {
+        String sql = "SELECT 1 FROM bloqueos WHERE usuario_bloqueador = ? AND usuario_bloqueado = ?";
+        
+        try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setString(1, usuarioBloqueador);
+            pstmt.setString(2, usuarioBloqueado);
+            ResultSet rs = pstmt.executeQuery();
+            return rs.next();
+        } catch (SQLException e) {
+            System.err.println("Error al verificar bloqueo: " + e.getMessage());
+            return false;
+        }
+    }
+
+   
+    public static Set<String> obtenerBloqueados(String usuarioBloqueador) {
+        Set<String> bloqueados = new HashSet<>();
+        String sql = "SELECT usuario_bloqueado FROM bloqueos WHERE usuario_bloqueador = ?";
+        
+        try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setString(1, usuarioBloqueador);
+            ResultSet rs = pstmt.executeQuery();
+            
+            while (rs.next()) {
+                bloqueados.add(rs.getString("usuario_bloqueado"));
+            }
+        } catch (SQLException e) {
+            System.err.println("Error al obtener lista de bloqueados: " + e.getMessage());
+        }
+        
+        return bloqueados;
+    }
+
+  
+    public static void cerrarConexion() {
+        if (conn != null) {
+            try {
+                conn.close();
+                System.out.println("Conexión a la base de datos cerrada.");
+            } catch (SQLException e) {
+                System.err.println("Error al cerrar la conexión: " + e.getMessage());
+            }
+        }
+    }
+}
