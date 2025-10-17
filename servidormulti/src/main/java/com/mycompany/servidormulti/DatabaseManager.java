@@ -3,6 +3,8 @@ package com.mycompany.servidormulti;
 import java.sql.*;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.ArrayList;
+import java.util.List;
 
 public class DatabaseManager {
     private static final String DB_URL = "jdbc:sqlite:chat.db";
@@ -58,9 +60,8 @@ public class DatabaseManager {
             pstmt.executeUpdate();
             return true;
         } catch (SQLException e) {
-            // Si el error es por duplicado (código 19 en SQLite)
             if (e.getErrorCode() == 19) {
-                return false; // Usuario ya existe
+                return false;
             }
             System.err.println("Error al registrar usuario: " + e.getMessage());
             return false;
@@ -105,10 +106,44 @@ public class DatabaseManager {
     }
 
     /**
-     * Bloquea un usuario (usuarioBloqueador bloquea a usuarioBloqueado)
+     * Obtiene la lista de todos los usuarios registrados
+     */
+    public static List<String> obtenerTodosLosUsuarios() {
+        List<String> usuarios = new ArrayList<>();
+        String sql = "SELECT nombre FROM usuarios ORDER BY nombre";
+        
+        try (Statement stmt = conn.createStatement();
+             ResultSet rs = stmt.executeQuery(sql)) {
+            
+            while (rs.next()) {
+                usuarios.add(rs.getString("nombre"));
+            }
+        } catch (SQLException e) {
+            System.err.println("Error al obtener lista de usuarios: " + e.getMessage());
+        }
+        
+        return usuarios;
+    }
+
+    /**
+     * Obtiene la lista de usuarios conectados actualmente
+     */
+    public static List<String> obtenerUsuariosConectados(String usuarioActual) {
+        List<String> conectados = new ArrayList<>();
+        
+        for (String nombre : ServidorMulti.clientes.keySet()) {
+            if (!nombre.matches("\\d+") && !nombre.equals(usuarioActual)) {
+                conectados.add(nombre);
+            }
+        }
+        
+        return conectados;
+    }
+
+    /**
+     * Bloquea un usuario
      */
     public static boolean bloquearUsuario(String usuarioBloqueador, String usuarioBloqueado) {
-        // No permitir que un usuario se bloquee a sí mismo
         if (usuarioBloqueador.equals(usuarioBloqueado)) {
             return false;
         }
@@ -121,7 +156,6 @@ public class DatabaseManager {
             pstmt.executeUpdate();
             return true;
         } catch (SQLException e) {
-            // Si el error es por duplicado (ya estaba bloqueado)
             if (e.getErrorCode() == 19) {
                 return false;
             }
@@ -140,7 +174,7 @@ public class DatabaseManager {
             pstmt.setString(1, usuarioBloqueador);
             pstmt.setString(2, usuarioBloqueado);
             int filasAfectadas = pstmt.executeUpdate();
-            return filasAfectadas > 0; // Retorna true si se eliminó alguna fila
+            return filasAfectadas > 0;
         } catch (SQLException e) {
             System.err.println("Error al desbloquear usuario: " + e.getMessage());
             return false;

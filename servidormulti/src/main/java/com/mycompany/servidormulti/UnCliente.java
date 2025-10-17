@@ -6,6 +6,8 @@ import java.io.IOException;
 import java.net.Socket;
 import java.util.Map;
 import java.util.Set;
+import java.util.List;
+import java.util.ArrayList; 
 
 public class UnCliente implements Runnable {
     
@@ -22,6 +24,35 @@ public class UnCliente implements Runnable {
         entrada = new DataInputStream(s.getInputStream());
     }
 
+    /**
+     * Envía el menú de comandos disponibles
+     */
+    private void enviarMenuAyuda() throws IOException {
+        StringBuilder menu = new StringBuilder();
+        menu.append("\nCOMANDOS DISPONIBLES:\n");
+        menu.append("  HELP              - Muestra este menú de ayuda\n");
+        menu.append("  USERS             - Lista todos los usuarios registrados\n");
+        menu.append("  ONLINE            - Lista usuarios conectados ahora\n");
+        menu.append("  BLOCK nombre      - Bloquea a un usuario\n");
+        menu.append("  UNBLOCK nombre    - Desbloquea a un usuario\n");
+        menu.append("  BLOCKLIST         - Muestra tus usuarios bloqueados\n");
+        menu.append("  @nombre mensaje   - Envía mensaje privado\n");
+        menu.append("  mensaje           - Envía mensaje público (broadcast)\n");
+        menu.append("  salir             - Cierra la conexión\n");
+        salida.writeUTF(menu.toString());
+    }
+
+    /**
+     * Envía mensaje de bienvenida después del login
+     */
+    private void enviarMensajeBienvenida() throws IOException {
+        StringBuilder bienvenida = new StringBuilder();
+        bienvenida.append("\nInicio de sesión exitoso. Bienvenido ").append(idCliente).append("!\n");
+        bienvenida.append("Tienes mensajes ilimitados.\n");
+        bienvenida.append("Escribe HELP para ver todos los comandos.\n");
+        salida.writeUTF(bienvenida.toString());
+    }
+
     @Override
     public void run() {
         try {
@@ -34,7 +65,65 @@ public class UnCliente implements Runnable {
                 String[] partesComando = mensaje.split(" ", 3);
                 String comando = partesComando.length > 0 ? partesComando[0].toUpperCase() : "";
 
-                // --- 1. Manejo de comandos REGISTER / LOGIN ---
+                // --- 1. Comando HELP ---
+                if (comando.equals("HELP")) {
+                    if (!autenticado) {
+                        salida.writeUTF("Debes iniciar sesión para ver los comandos. Usa: LOGIN nombre password");
+                        continue;
+                    }
+                    enviarMenuAyuda();
+                    continue;
+                }
+
+                // --- 2. Comando USERS (listar todos los usuarios registrados) ---
+                if (comando.equals("USERS")) {
+                    if (!autenticado) {
+                        salida.writeUTF("Error: Debes estar autenticado para ver la lista de usuarios.");
+                        continue;
+                    }
+                    
+                    List<String> usuarios = DatabaseManager.obtenerTodosLosUsuarios();
+                    
+                    if (usuarios.isEmpty()) {
+                        salida.writeUTF("No hay usuarios registrados.");
+                    } else {
+                        StringBuilder sb = new StringBuilder("\nUSUARIOS REGISTRADOS:\n");
+                        for (String usuario : usuarios) {
+                            if (usuario.equals(idCliente)) {
+                                sb.append("  - ").append(usuario).append(" (tu)\n");
+                            } else {
+                                sb.append("  - ").append(usuario).append("\n");
+                            }
+                        }
+                        sb.append("Total: ").append(usuarios.size()).append(" usuarios");
+                        salida.writeUTF(sb.toString());
+                    }
+                    continue;
+                }
+
+                // --- 3. Comando ONLINE (listar usuarios conectados) ---
+                if (comando.equals("ONLINE")) {
+                    if (!autenticado) {
+                        salida.writeUTF("Error: Debes estar autenticado para ver usuarios conectados.");
+                        continue;
+                    }
+                    
+                    List<String> conectados = DatabaseManager.obtenerUsuariosConectados(idCliente);
+                    
+                    if (conectados.isEmpty()) {
+                        salida.writeUTF("No hay otros usuarios conectados en este momento.");
+                    } else {
+                        StringBuilder sb = new StringBuilder("\nUSUARIOS CONECTADOS:\n");
+                        for (String usuario : conectados) {
+                            sb.append("  - ").append(usuario).append("\n");
+                        }
+                        sb.append("Total: ").append(conectados.size()).append(" conectados");
+                        salida.writeUTF(sb.toString());
+                    }
+                    continue;
+                }
+
+                // --- 4. Manejo de comandos REGISTER / LOGIN ---
                 if (comando.equals("REGISTER") || comando.equals("LOGIN")) {
                     if (autenticado) {
                         salida.writeUTF("Ya estás autenticado como: " + idCliente);
@@ -51,7 +140,7 @@ public class UnCliente implements Runnable {
                     
                     if (comando.equals("REGISTER")) {
                         if (ServidorMulti.registrarUsuario(nombre, password)) {
-                            salida.writeUTF("¡Registro exitoso! Ahora usa LOGIN.");
+                            salida.writeUTF("Registro exitoso! Ahora usa LOGIN " + nombre + " [tu_password]");
                         } else {
                             salida.writeUTF("Error: El nombre de usuario '" + nombre + "' ya existe.");
                         }
@@ -62,7 +151,7 @@ public class UnCliente implements Runnable {
                             idCliente = nombre;
                             ServidorMulti.clientes.put(idCliente, this);
                             
-                            salida.writeUTF("¡Inicio de sesión exitoso! Eres: " + idCliente + ". Tienes mensajes ilimitados.");
+                            enviarMensajeBienvenida();
                             System.out.println("Cliente se autenticó como " + nombre);
                         } else {
                             salida.writeUTF("Error de inicio de sesión. Credenciales incorrectas.");
@@ -71,7 +160,7 @@ public class UnCliente implements Runnable {
                     continue;
                 }
                 
-                // --- 2. Comandos BLOCK / UNBLOCK / BLOCKLIST ---
+                // --- 5. Comandos BLOCK / UNBLOCK / BLOCKLIST ---
                 if (comando.equals("BLOCK")) {
                     if (!autenticado) {
                         salida.writeUTF("Error: Debes estar autenticado para bloquear usuarios.");
@@ -79,25 +168,22 @@ public class UnCliente implements Runnable {
                     }
                     
                     if (partesComando.length != 2) {
-                        salida.writeUTF("Error de sintaxis. Usa: BLOCK nombre_usuario");
+                        salida.writeUTF("Error de sintaxis. Usa: BLOCK nombre_usuario\nPara ver usuarios disponibles usa: USERS");
                         continue;
                     }
                     
                     String usuarioABloquear = partesComando[1];
                     
-                    // Verificar que el usuario a bloquear exista
                     if (!DatabaseManager.usuarioExiste(usuarioABloquear)) {
-                        salida.writeUTF("Error: El usuario '" + usuarioABloquear + "' no existe.");
+                        salida.writeUTF("Error: El usuario '" + usuarioABloquear + "' no existe.\nUsa USERS para ver usuarios disponibles.");
                         continue;
                     }
                     
-                    // Verificar que no se bloquee a sí mismo
                     if (usuarioABloquear.equals(idCliente)) {
                         salida.writeUTF("Error: No puedes bloquearte a ti mismo.");
                         continue;
                     }
                     
-                    // Intentar bloquear
                     if (DatabaseManager.bloquearUsuario(idCliente, usuarioABloquear)) {
                         salida.writeUTF("Usuario '" + usuarioABloquear + "' bloqueado correctamente.");
                     } else {
@@ -113,13 +199,12 @@ public class UnCliente implements Runnable {
                     }
                     
                     if (partesComando.length != 2) {
-                        salida.writeUTF("Error de sintaxis. Usa: UNBLOCK nombre_usuario");
+                        salida.writeUTF("Error de sintaxis. Usa: UNBLOCK nombre_usuario\nPara ver bloqueados usa: BLOCKLIST");
                         continue;
                     }
                     
                     String usuarioADesbloquear = partesComando[1];
                     
-                    // Intentar desbloquear
                     if (DatabaseManager.desbloquearUsuario(idCliente, usuarioADesbloquear)) {
                         salida.writeUTF("Usuario '" + usuarioADesbloquear + "' desbloqueado correctamente.");
                     } else {
@@ -139,18 +224,17 @@ public class UnCliente implements Runnable {
                     if (bloqueados.isEmpty()) {
                         salida.writeUTF("No tienes usuarios bloqueados.");
                     } else {
-                        StringBuilder sb = new StringBuilder("Usuarios bloqueados: ");
+                        StringBuilder sb = new StringBuilder("\nUSUARIOS BLOQUEADOS:\n");
                         for (String bloqueado : bloqueados) {
-                            sb.append(bloqueado).append(", ");
+                            sb.append("  - ").append(bloqueado).append("\n");
                         }
-                        // Eliminar la última coma y espacio
-                        String lista = sb.substring(0, sb.length() - 2);
-                        salida.writeUTF(lista);
+                        sb.append("Total: ").append(bloqueados.size()).append(" bloqueados");
+                        salida.writeUTF(sb.toString());
                     }
                     continue;
                 }
                 
-                // --- 3. Verificación de permisos para enviar ---
+                // --- 6. Verificación de permisos para enviar ---
                 if (!autenticado && mensajesEnviados >= 3) {
                     salida.writeUTF("Límite de 3 mensajes alcanzado. Debes autenticarte (ej: LOGIN nombre password) para enviar más.");
                     continue;
@@ -160,11 +244,11 @@ public class UnCliente implements Runnable {
                     mensajesEnviados++;
                 }
 
-                // --- 4. Manejo de mensajes privados (@) ---
+                // --- 7. Manejo de mensajes privados (@) ---
                 if (mensaje.startsWith("@")) {
                     String[] partes = mensaje.split(" ", 2);
                     if (partes.length < 2) {
-                         salida.writeUTF("Formato privado incorrecto. Usa: @ID_o_NOMBRE mensaje");
+                         salida.writeUTF("Formato privado incorrecto. Usa: @nombre mensaje");
                          if (!autenticado) mensajesEnviados--;
                          continue;
                     }
@@ -173,19 +257,17 @@ public class UnCliente implements Runnable {
                     UnCliente clienteDestino = ServidorMulti.clientes.get(aQuien);
                     
                     if (clienteDestino == null) {
-                        salida.writeUTF("Error: Cliente con ID/Nombre '" + aQuien + "' no encontrado o desconectado.");
+                        salida.writeUTF("Error: Cliente con nombre '" + aQuien + "' no encontrado o desconectado.\nUsa ONLINE para ver usuarios conectados.");
                         if (!autenticado) mensajesEnviados--;
                         continue;
                     }
                     
-                    // Verificar si el remitente está bloqueado por el destinatario
                     if (autenticado && DatabaseManager.estaBloqueado(aQuien, idCliente)) {
                         salida.writeUTF("No puedes enviar mensajes a '" + aQuien + "' porque te ha bloqueado.");
                         if (!autenticado) mensajesEnviados--;
                         continue;
                     }
                     
-                    // Verificar si el destinatario está bloqueado por el remitente
                     if (autenticado && DatabaseManager.estaBloqueado(idCliente, aQuien)) {
                         salida.writeUTF("No puedes enviar mensajes a '" + aQuien + "' porque lo has bloqueado.");
                         if (!autenticado) mensajesEnviados--;
@@ -195,31 +277,27 @@ public class UnCliente implements Runnable {
                     String remitente = idCliente;
                     String mensajeConRemitente = "(PRIVADO de " + remitente + "): " + partes[1];
                     clienteDestino.salida.writeUTF(mensajeConRemitente);
-                    this.salida.writeUTF("(Mensaje enviado a " + aQuien + ")");
+                    this.salida.writeUTF("Mensaje enviado a " + aQuien);
                     
                 } else {
-                    // --- 5. Manejo de mensajes públicos (Broadcast) ---
+                    // --- 8. Manejo de mensajes públicos (Broadcast) ---
                     String remitente = idCliente;
                     String mensajeBroadcast = "[" + remitente + "]: " + mensaje;
                     
                     for (Map.Entry<String, UnCliente> entry : ServidorMulti.clientes.entrySet()) {
                         UnCliente cliente = entry.getValue();
                         
-                        // No enviar a sí mismo
                         if (cliente == this) {
                             continue;
                         }
                         
-                        // Si el remitente está autenticado, verificar bloqueos
                         if (autenticado) {
                             String nombreDestinatario = entry.getKey();
                             
-                            // No enviar si el destinatario bloqueó al remitente
                             if (DatabaseManager.estaBloqueado(nombreDestinatario, idCliente)) {
                                 continue;
                             }
                             
-                            // No enviar si el remitente bloqueó al destinatario
                             if (DatabaseManager.estaBloqueado(idCliente, nombreDestinatario)) {
                                 continue;
                             }
