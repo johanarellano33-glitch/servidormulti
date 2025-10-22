@@ -37,4 +37,31 @@ public class gato {
             this.turnoActual = jugador2;
         }
     }
+   public String getJugador1() {
+        return jugador1;
+    }
+    
+    public String getJugador2() {
+        return jugador2;
+    }
+    
+    public String getTurnoActual() {
+        return turnoActual;
+    }
+    
+    public boolean isJuegoTerminado() {
+        return juegoTerminado;
+    }
+    
+    public String getGanador() {
+        return ganador;
+    }
+    
+    public char getSimbolo(String jugador) {
+        if (jugador.equals(jugador1)) {
+            return simboloJugador1;
+        } else {
+            return simboloJugador2;
+        }
+    }
 }
