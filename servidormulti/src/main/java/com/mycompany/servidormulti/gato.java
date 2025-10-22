@@ -105,5 +105,14 @@ public class gato {
                 return;
             }
         }
+        for (int j = 0; j < 3; j++) {
+            if (tablero[0][j] != '-' && 
+                tablero[0][j] == tablero[1][j] && 
+                tablero[1][j] == tablero[2][j]) {
+                juegoTerminado = true;
+                ganador = tablero[0][j] == simboloJugador1 ? jugador1 : jugador2;
+                return;
+            }
+        }
     
     
