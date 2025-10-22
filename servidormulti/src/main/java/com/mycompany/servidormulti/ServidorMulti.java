@@ -9,6 +9,8 @@ public class ServidorMulti {
     
     static ConcurrentHashMap<String, UnCliente> clientes = new ConcurrentHashMap<>();
     
+    static ConcurrentHashMap<String, gato> juegosActivos = new ConcurrentHashMap<>();
+    
     
     public static boolean verificarCredenciales(String nombre, String password) {
         return DatabaseManager.verificarCredenciales(nombre, password);
@@ -20,10 +22,10 @@ public class ServidorMulti {
     }
     
     public static void main(String[] args) {
-        
+   
         DatabaseManager.inicializar();
         
-        
+  
         Runtime.getRuntime().addShutdownHook(new Thread(() -> {
             DatabaseManager.cerrarConexion();
         }));
