@@ -114,5 +114,12 @@ public class gato {
                 return;
             }
         }
+        if (tablero[0][0] != '-' && 
+            tablero[0][0] == tablero[1][1] && 
+            tablero[1][1] == tablero[2][2]) {
+            juegoTerminado = true;
+            ganador = tablero[0][0] == simboloJugador1 ? jugador1 : jugador2;
+            return;
+        }
     
     
