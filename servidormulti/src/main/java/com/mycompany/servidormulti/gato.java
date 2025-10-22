@@ -137,5 +137,13 @@ public class gato {
                     tableroLleno = false;
                     break;
                 }
+                 }
+        }
+        
+        if (tableroLleno) {
+            juegoTerminado = true;
+            ganador = "EMPATE";
+        }
+    }
     
     
