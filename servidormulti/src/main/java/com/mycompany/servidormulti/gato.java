@@ -94,4 +94,16 @@ public class gato {
         return true;
    
     }
+    private void verificarEstadoJuego() {
+        // Verificar filas
+        for (int i = 0; i < 3; i++) {
+            if (tablero[i][0] != '-' && 
+                tablero[i][0] == tablero[i][1] && 
+                tablero[i][1] == tablero[i][2]) {
+                juegoTerminado = true;
+                ganador = tablero[i][0] == simboloJugador1 ? jugador1 : jugador2;
+                return;
+            }
+        }
+    
     
