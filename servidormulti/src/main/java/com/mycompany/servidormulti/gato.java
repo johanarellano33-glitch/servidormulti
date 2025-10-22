@@ -159,5 +159,9 @@ public class gato {
         }
         return sb.toString();
     }
-    
+    public void terminarJuego(String jugadorDesconectado) {
+        juegoTerminado = true;
+        ganador = jugadorDesconectado.equals(jugador1) ? jugador2 : jugador1;
+    }
+}
     
