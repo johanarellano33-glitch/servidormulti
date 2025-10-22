@@ -64,18 +64,34 @@ public class gato {
             return simboloJugador2;
         }
     }
-    /**
-     * Realiza un movimiento en el tablero
-     * @return true si el movimiento fue válido, false si no
-     */
+  
     public boolean realizarMovimiento(String jugador, int fila, int columna) {
-        // Verificar que sea el turno del jugador
         if (!jugador.equals(turnoActual)) {
             return false;
         }
         
-        // Verificar que la posición sea válida
+     
         if (fila < 0 || fila > 2 || columna < 0 || columna > 2) {
             return false;
         }
+     
+        if (tablero[fila][columna] != '-') {
+            return false;
+        }
+        
+       
+        char simbolo = jugador.equals(jugador1) ? simboloJugador1 : simboloJugador2;
+        tablero[fila][columna] = simbolo;
+        
+      
+        verificarEstadoJuego();
+        
+        
+        if (!juegoTerminado) {
+            turnoActual = turnoActual.equals(jugador1) ? jugador2 : jugador1;
+        }
+        
+        return true;
+   
     }
+    
