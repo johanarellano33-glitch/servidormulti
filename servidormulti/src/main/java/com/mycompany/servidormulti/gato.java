@@ -121,5 +121,21 @@ public class gato {
             ganador = tablero[0][0] == simboloJugador1 ? jugador1 : jugador2;
             return;
         }
+         if (tablero[0][2] != '-' && 
+            tablero[0][2] == tablero[1][1] && 
+            tablero[1][1] == tablero[2][0]) {
+            juegoTerminado = true;
+            ganador = tablero[0][2] == simboloJugador1 ? jugador1 : jugador2;
+            return;
+        }
+        
+        // Verificar empate (tablero lleno)
+        boolean tableroLleno = true;
+        for (int i = 0; i < 3; i++) {
+            for (int j = 0; j < 3; j++) {
+                if (tablero[i][j] == '-') {
+                    tableroLleno = false;
+                    break;
+                }
     
     
