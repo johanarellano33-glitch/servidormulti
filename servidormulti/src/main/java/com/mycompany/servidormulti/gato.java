@@ -146,4 +146,18 @@ public class gato {
         }
     }
     
+    public String obtenerTableroTexto() {
+        StringBuilder sb = new StringBuilder();
+        sb.append("\n    0   1   2\n");
+        sb.append("  +---+---+---+\n");
+        for (int i = 0; i < 3; i++) {
+            sb.append(i).append(" | ");
+            for (int j = 0; j < 3; j++) {
+                sb.append(tablero[i][j]).append(" | ");
+            }
+            sb.append("\n  +---+---+---+\n");
+        }
+        return sb.toString();
+    }
+    
     
