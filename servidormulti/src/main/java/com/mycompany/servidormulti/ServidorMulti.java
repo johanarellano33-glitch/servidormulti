@@ -25,6 +25,18 @@ public class ServidorMulti {
         return DatabaseManager.registrarUsuario(nombre, password);
     }
     
+    /**
+     * Genera una clave única para identificar un juego entre dos jugadores
+     */
+    public static String generarClaveJuego(String jugador1, String jugador2) {
+        // Ordenar alfabéticamente para evitar duplicados
+        if (jugador1.compareTo(jugador2) < 0) {
+            return jugador1 + ":" + jugador2;
+        } else {
+            return jugador2 + ":" + jugador1;
+        }
+    }
+    
     public static void main(String[] args) {
         // Inicializar la base de datos
         DatabaseManager.inicializar();

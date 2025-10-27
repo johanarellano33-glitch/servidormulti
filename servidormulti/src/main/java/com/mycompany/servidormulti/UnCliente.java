@@ -322,7 +322,7 @@ public class UnCliente implements Runnable {
                     boolean invitadorEmpieza = random.nextBoolean();
                     
                     String claveJuego = ServidorMulti.generarClaveJuego(invitador, idCliente);
-                    Gato juego = new Gato(invitador, idCliente, invitadorEmpieza);
+                    gato juego = new gato(invitador, idCliente, invitadorEmpieza);
                     ServidorMulti.juegosActivos.put(claveJuego, juego);
                     
                     invitacionPendiente = null;
@@ -378,12 +378,12 @@ public class UnCliente implements Runnable {
                     }
                     
                     // Buscar si el usuario tiene algún juego activo
-                    Gato juegoActual = null;
+                    gato juegoActual = null;
                     String claveJuegoActual = null;
                     String oponente = null;
                     
-                    for (Map.Entry<String, Gato> entry : ServidorMulti.juegosActivos.entrySet()) {
-                        Gato juego = entry.getValue();
+                    for (Map.Entry<String, gato> entry : ServidorMulti.juegosActivos.entrySet()) {
+                        gato juego = entry.getValue();
                         if (juego.getJugador1().equals(idCliente) || juego.getJugador2().equals(idCliente)) {
                             juegoActual = juego;
                             claveJuegoActual = entry.getKey();
@@ -456,12 +456,12 @@ public class UnCliente implements Runnable {
                     }
                     
                     // Buscar si el usuario tiene algún juego activo
-                    Gato juegoActual = null;
+                    gato juegoActual = null;
                     String claveJuegoActual = null;
                     String oponente = null;
                     
-                    for (Map.Entry<String, Gato> entry : ServidorMulti.juegosActivos.entrySet()) {
-                        Gato juego = entry.getValue();
+                    for (Map.Entry<String, gato> entry : ServidorMulti.juegosActivos.entrySet()) {
+                        gato juego = entry.getValue();
                         if (juego.getJugador1().equals(idCliente) || juego.getJugador2().equals(idCliente)) {
                             juegoActual = juego;
                             claveJuegoActual = entry.getKey();
@@ -497,8 +497,8 @@ public class UnCliente implements Runnable {
                     StringBuilder sb = new StringBuilder("\nTUS JUEGOS ACTIVOS:\n");
                     int contador = 0;
                     
-                    for (Map.Entry<String, Gato> entry : ServidorMulti.juegosActivos.entrySet()) {
-                        Gato juego = entry.getValue();
+                    for (Map.Entry<String, gato> entry : ServidorMulti.juegosActivos.entrySet()) {
+                        gato juego = entry.getValue();
                         if (juego.getJugador1().equals(idCliente) || juego.getJugador2().equals(idCliente)) {
                             String oponente = juego.getJugador1().equals(idCliente) ? juego.getJugador2() : juego.getJugador1();
                             sb.append("  - Jugando contra: ").append(oponente);
@@ -598,8 +598,8 @@ public class UnCliente implements Runnable {
             
             // Terminar todos los juegos donde participe este cliente
             if (autenticado) {
-                for (Map.Entry<String, Gato> entry : ServidorMulti.juegosActivos.entrySet()) {
-                    Gato juego = entry.getValue();
+                for (Map.Entry<String, gato> entry : ServidorMulti.juegosActivos.entrySet()) {
+                    gato juego = entry.getValue();
                     if (juego.getJugador1().equals(idCliente) || juego.getJugador2().equals(idCliente)) {
                         String oponente = juego.getJugador1().equals(idCliente) ? juego.getJugador2() : juego.getJugador1();
                         juego.terminarJuego(idCliente);
