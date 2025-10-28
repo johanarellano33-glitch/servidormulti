@@ -1,68 +1,57 @@
 package com.mycompany.servidormulti;
 
 import java.io.IOException;
-import java.io.*;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class ServidorMulti {
     
-    // Almacena a los clientes conectados (key: ID temporal o Nombre de usuario)
     static ConcurrentHashMap<String, UnCliente> clientes = new ConcurrentHashMap<>();
-    private static final String ARCHIVO_USUARIOS = "usuarios.txt";
+    // Almacena los juegos activos: clave = "jugador1:jugador2" (ordenado alfabéticamente)
+    static ConcurrentHashMap<String, gato> juegosActivos = new ConcurrentHashMap<>();
     
     /**
-     * Verifica si las credenciales coinciden con algún registro en el archivo.
+     * Verifica si las credenciales coinciden (ahora usando DatabaseManager)
      */
     public static boolean verificarCredenciales(String nombre, String password) {
-        try (BufferedReader br = new BufferedReader(new FileReader(ARCHIVO_USUARIOS))) {
-            String linea;
-            String credencial = nombre + ":" + password; 
-            while ((linea = br.readLine()) != null) {
-                if (linea.equals(credencial)) {
-                    return true;
-                }
-            }
-        } catch (IOException e) {
-            // Se ignora si el archivo no existe o hay error de lectura
-        }
-        return false;
+        return DatabaseManager.verificarCredenciales(nombre, password);
     }
     
     /**
-     * Intenta registrar un nuevo usuario si no existe.
+     * Registra un nuevo usuario (ahora usando DatabaseManager)
      */
     public static boolean registrarUsuario(String nombre, String password) {
-        // 1. Verificar si el nombre ya existe
-        try (BufferedReader br = new BufferedReader(new FileReader(ARCHIVO_USUARIOS))) {
-            String linea;
-            while ((linea = br.readLine()) != null) {
-                if (linea.startsWith(nombre + ":")) {
-                    return false; // El usuario ya existe
-                }
-            }
-        } catch (IOException e) {
-            // Ignorar
-        }
-        
-        // 2. Si no existe, agregarlo al archivo
-        try (BufferedWriter bw = new BufferedWriter(new FileWriter(ARCHIVO_USUARIOS, true))) {
-            String nuevaCredencial = nombre + ":" + password;
-            bw.write(nuevaCredencial);
-            bw.newLine();
-            return true;
-        } catch (IOException e) {
-            System.err.println("Error al escribir en el archivo de usuarios: " + e.getMessage());
-            return false;
+        return DatabaseManager.registrarUsuario(nombre, password);
+    }
+    
+    /**
+     * Genera una clave única para identificar un juego entre dos jugadores
+     */
+    public static String generarClaveJuego(String jugador1, String jugador2) {
+        // Ordenar alfabéticamente para evitar duplicados
+        if (jugador1.compareTo(jugador2) < 0) {
+            return jugador1 + ":" + jugador2;
+        } else {
+            return jugador2 + ":" + jugador1;
         }
     }
     
     public static void main(String[] args) {
+        // Inicializar la base de datos
+        DatabaseManager.inicializar();
+        
+        // Agregar shutdown hook para cerrar la conexión limpiamente
+        Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+            DatabaseManager.cerrarConexion();
+        }));
+        
         int puerto = 8080;
         int contador = 0;
+        
         try (ServerSocket servidorSocket = new ServerSocket(puerto)) {
             System.out.println("Servidor iniciado en el puerto " + puerto);
+            
             while (true) {
                 Socket socket = servidorSocket.accept();
                 String idCliente = Integer.toString(contador);
@@ -71,7 +60,7 @@ public class ServidorMulti {
                 
                 clientes.put(idCliente, uncliente);
                 hilo.start();
-                System.out.println("Se conectó el chango #" + contador + " (ID: " + idCliente + ")");
+                System.out.println("Se conectó el cliente #" + contador + " (ID: " + idCliente + ")");
                 contador++;
             }
         } catch (IOException e) {
