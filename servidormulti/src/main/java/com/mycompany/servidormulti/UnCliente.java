@@ -45,6 +45,8 @@ public class UnCliente implements Runnable {
         menu.append("  MOVER fila col    - Realiza un movimiento (ej: MOVER 0 1)\n");
         menu.append("  RENDIRSE          - Te rindes en el juego actual\n");
         menu.append("  JUEGOS            - Muestra tus juegos activos\n");
+        menu.append("  RANKING           - Muestra el ranking general de jugadores\n");
+        menu.append("  VS nombre1 nombre2 - Compara estadísticas entre 2 jugadores\n");
         menu.append("  @nombre mensaje   - Envía mensaje privado\n");
         menu.append("  mensaje           - Envía mensaje público (broadcast)\n");
         menu.append("  salir             - Cierra la conexión\n");
@@ -427,9 +429,16 @@ public class UnCliente implements Runnable {
                         String resultado;
                         if (juegoActual.getGanador().equals("EMPATE")) {
                             resultado = "\n*** JUEGO TERMINADO - EMPATE ***\n" + tablero;
+                            // Registrar empate para ambos jugadores
+                            DatabaseManager.registrarEmpate(idCliente);
+                            DatabaseManager.registrarEmpate(oponente);
                         } else {
                             resultado = "\n*** JUEGO TERMINADO ***\n" + tablero + 
                                        "GANADOR: " + juegoActual.getGanador() + "!";
+                            // Registrar victoria y derrota
+                            DatabaseManager.registrarVictoria(juegoActual.getGanador());
+                            String perdedor = juegoActual.getGanador().equals(idCliente) ? oponente : idCliente;
+                            DatabaseManager.registrarDerrota(perdedor);
                         }
                         
                         this.salida.writeUTF(resultado);
@@ -516,7 +525,49 @@ public class UnCliente implements Runnable {
                     continue;
                 }
                 
-                // --- 12. Verificación de permisos para enviar ---
+                // --- 12. Comando RANKING (ver ranking general) ---
+                if (comando.equals("RANKING")) {
+                    if (!autenticado) {
+                        salida.writeUTF("Error: Debes estar autenticado para ver el ranking.");
+                        continue;
+                    }
+                    
+                    List<String> ranking = DatabaseManager.obtenerRankingGeneral();
+                    
+                    if (ranking.isEmpty()) {
+                        salida.writeUTF("Aún no hay jugadores en el ranking. ¡Sé el primero en jugar!");
+                    } else {
+                        StringBuilder sb = new StringBuilder("\n========== RANKING GENERAL ==========\n");
+                        for (String linea : ranking) {
+                            sb.append(linea).append("\n");
+                        }
+                        sb.append("=====================================");
+                        salida.writeUTF(sb.toString());
+                    }
+                    continue;
+                }
+                
+                // --- 13. Comando VS (comparar estadísticas entre dos jugadores) ---
+                if (comando.equals("VS")) {
+                    if (!autenticado) {
+                        salida.writeUTF("Error: Debes estar autenticado.");
+                        continue;
+                    }
+                    
+                    if (partesComando.length != 3) {
+                        salida.writeUTF("Error de sintaxis. Usa: VS nombre1 nombre2");
+                        continue;
+                    }
+                    
+                    String jugador1 = partesComando[1];
+                    String jugador2 = partesComando[2];
+                    
+                    String resultado = DatabaseManager.obtenerEstadisticasVS(jugador1, jugador2);
+                    salida.writeUTF(resultado);
+                    continue;
+                }
+                
+                // --- 14. Verificación de permisos para enviar ---
                 if (!autenticado && mensajesEnviados >= 3) {
                     salida.writeUTF("Límite de 3 mensajes alcanzado. Debes autenticarte (ej: LOGIN nombre password) para enviar más.");
                     continue;
