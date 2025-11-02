@@ -66,12 +66,12 @@ public String getGrupoActual() {
    private void enviarMenuAyuda(int pagina) throws IOException {
     List<String> comandos = new ArrayList<>();
     
-    comandos.add("  HELP [pagina]     - Muestra este menú de ayuda");
-    comandos.add("  USERS [pagina]    - Lista todos los usuarios registrados");
-    comandos.add("  ONLINE            - Lista usuarios conectados ahora");
-    comandos.add("  BLOCK nombre      - Bloquea a un usuario");
-    comandos.add("  UNBLOCK nombre    - Desbloquea a un usuario");
-    comandos.add("  BLOCKLIST         - Muestra tus usuarios bloqueados");
+    comandos.add("  AYUDA [pagina]     - Muestra este menú de ayuda");
+    comandos.add("  USUARIOS [pagina]    - Lista todos los usuarios registrados");
+    comandos.add("  LINEA            - Lista usuarios conectados ahora");
+    comandos.add("  BLOQUEAR nombre      - Bloquea a un usuario");
+    comandos.add("  DESBLOQUEAR nombre    - Desbloquea a un usuario");
+    comandos.add("  LISTADEBLOQUEADOS         - Muestra tus usuarios bloqueados");
     comandos.add("");
     comandos.add("--- GRUPOS ---");
     comandos.add("  GRUPOS [pagina]   - Lista todos los grupos disponibles");
@@ -107,7 +107,7 @@ public String getGrupoActual() {
         StringBuilder bienvenida = new StringBuilder();
         bienvenida.append("\nInicio de sesión exitoso. Bienvenido ").append(idCliente).append("!\n");
         bienvenida.append("Tienes mensajes ilimitados.\n");
-        bienvenida.append("Escribe HELP para ver todos los comandos.\n");
+        bienvenida.append("Escribe AYUDA para ver todos los comandos.\n");
         salida.writeUTF(bienvenida.toString());
     }
 
@@ -115,7 +115,7 @@ public String getGrupoActual() {
     public void run() {
         try {
             salida.writeUTF("Bienvenido. Tu ID es: " + idCliente + 
-                             ". Tienes 3 mensajes gratis. Usa 'REGISTER nombre password' o 'LOGIN nombre password'.");
+                             ". Tienes 3 mensajes gratis. Usa 'REGISTRAR nombre password' o 'ENTRAR nombre password'.");
             
             while (true) {
                 String mensaje = entrada.readUTF();
@@ -125,9 +125,9 @@ public String getGrupoActual() {
 
              
                      
-   if (comando.equals("HELP")) {
+   if (comando.equals("AYUDA")) {
     if (!autenticado) {
-        salida.writeUTF("Debes iniciar sesión para ver los comandos. Usa: LOGIN nombre password");
+        salida.writeUTF("Debes iniciar sesión para ver los comandos. Usa: ENTRAR nombre password");
         continue;
     }
     
@@ -146,7 +146,7 @@ public String getGrupoActual() {
 }
 
              
-                if (comando.equals("USERS")) {
+                if (comando.equals("USUARIOS")) {
                     if (!autenticado) {
                         salida.writeUTF("Error: Debes estar autenticado para ver la lista de usuarios.");
                         continue;
@@ -172,7 +172,7 @@ public String getGrupoActual() {
                 }
 
               
-                if (comando.equals("ONLINE")) {
+                if (comando.equals("LINEA")) {
                     if (!autenticado) {
                         salida.writeUTF("Error: Debes estar autenticado para ver usuarios conectados.");
                         continue;
@@ -194,7 +194,7 @@ public String getGrupoActual() {
                 }
 
              
-                if (comando.equals("REGISTER") || comando.equals("LOGIN")) {
+                if (comando.equals("REGISTRAR") || comando.equals("ENTRAR")) {
                     if (autenticado) {
                         salida.writeUTF("Ya estás autenticado como: " + idCliente);
                         continue;
@@ -208,13 +208,13 @@ public String getGrupoActual() {
                     String nombre = partesComando[1];
                     String password = partesComando[2];
                     
-                    if (comando.equals("REGISTER")) {
+                    if (comando.equals("REGISTRAR")) {
                         if (ServidorMulti.registrarUsuario(nombre, password)) {
-                            salida.writeUTF("Registro exitoso! Ahora usa LOGIN " + nombre + " [tu_password]");
+                            salida.writeUTF("Registro exitoso! Ahora usa ENTRAR " + nombre + " [tu_password]");
                         } else {
                             salida.writeUTF("Error: El nombre de usuario '" + nombre + "' ya existe.");
                         }
-                   } else if (comando.equals("LOGIN")) {
+                   } else if (comando.equals("ENTRAR")) {
     if (ServidorMulti.verificarCredenciales(nombre, password)) {
         autenticado = true;
         ServidorMulti.clientes.remove(idCliente);
@@ -233,21 +233,21 @@ public String getGrupoActual() {
                 }
                 
               
-                if (comando.equals("BLOCK")) {
+                if (comando.equals("BLOQUEAR")) {
                     if (!autenticado) {
                         salida.writeUTF("Error: Debes estar autenticado para bloquear usuarios.");
                         continue;
                     }
                     
                     if (partesComando.length != 2) {
-                        salida.writeUTF("Error de sintaxis. Usa: BLOCK nombre_usuario\nPara ver usuarios disponibles usa: USERS");
+                        salida.writeUTF("Error de sintaxis. Usa: BLOQUEAR nombre_usuario\nPara ver usuarios disponibles usa: USUARIOS");
                         continue;
                     }
                     
                     String usuarioABloquear = partesComando[1];
                     
                     if (!DatabaseManager.usuarioExiste(usuarioABloquear)) {
-                        salida.writeUTF("Error: El usuario '" + usuarioABloquear + "' no existe.\nUsa USERS para ver usuarios disponibles.");
+                        salida.writeUTF("Error: El usuario '" + usuarioABloquear + "' no existe.\nUsa USUARIOS para ver usuarios disponibles.");
                         continue;
                     }
                     
@@ -264,14 +264,14 @@ public String getGrupoActual() {
                     continue;
                 }
                 
-                if (comando.equals("UNBLOCK")) {
+                if (comando.equals("DESBLOQUEAR")) {
                     if (!autenticado) {
                         salida.writeUTF("Error: Debes estar autenticado para desbloquear usuarios.");
                         continue;
                     }
                     
                     if (partesComando.length != 2) {
-                        salida.writeUTF("Error de sintaxis. Usa: UNBLOCK nombre_usuario\nPara ver bloqueados usa: BLOCKLIST");
+                        salida.writeUTF("Error de sintaxis. Usa: DESBLOQURAT nombre_usuario\nPara ver bloqueados usa: LISTADEBLOQUEADOS");
                         continue;
                     }
                     
@@ -285,7 +285,7 @@ public String getGrupoActual() {
                     continue;
                 }
                 
-                if (comando.equals("BLOCKLIST")) {
+                if (comando.equals("LISTADEBLOQUEADOS")) {
                     if (!autenticado) {
                         salida.writeUTF("Error: Debes estar autenticado para ver tu lista de bloqueados.");
                         continue;
@@ -811,7 +811,7 @@ public String getGrupoActual() {
                 
              
                 if (!autenticado && mensajesEnviados >= 3) {
-                    salida.writeUTF("Límite de 3 mensajes alcanzado. Debes autenticarte (ej: LOGIN nombre password) para enviar más.");
+                    salida.writeUTF("Límite de 3 mensajes alcanzado. Debes autenticarte (ej: ENTRAR nombre password) para enviar más.");
                     continue;
                 }
                 
@@ -832,7 +832,7 @@ public String getGrupoActual() {
                     UnCliente clienteDestino = ServidorMulti.clientes.get(aQuien);
                     
                     if (clienteDestino == null) {
-                        salida.writeUTF("Error: Cliente con nombre '" + aQuien + "' no encontrado o desconectado.\nUsa ONLINE para ver usuarios conectados.");
+                        salida.writeUTF("Error: Cliente con nombre '" + aQuien + "' no encontrado o desconectado.\nUsa LINEA para ver usuarios conectados.");
                         if (!autenticado) mensajesEnviados--;
                         continue;
                     }
