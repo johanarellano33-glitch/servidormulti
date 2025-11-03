@@ -20,7 +20,10 @@ private boolean autenticado = false;
 
 
 private String invitacionPendiente = null;
-private String grupoActual = "Todos";  
+private String grupoActual = "Todos";
+public String getGrupoActual() {
+    return grupoActual;
+}
     
     UnCliente(Socket s, String id) throws IOException {
         this.idCliente = id;
@@ -801,37 +804,46 @@ private String grupoActual = "Todos";
                     clienteDestino.salida.writeUTF(mensajeConRemitente);
                     this.salida.writeUTF("Mensaje enviado a " + aQuien);
                     
-                } else {
-             
-                    String remitente = idCliente;
-                    String mensajeBroadcast = "[" + remitente + "]: " + mensaje;
-                    
-                    for (Map.Entry<String, UnCliente> entry : ServidorMulti.clientes.entrySet()) {
-                        UnCliente cliente = entry.getValue();
-                        
-                        if (cliente == this) {
-                            continue;
-                        }
-                        
-                        if (autenticado) {
-                            String nombreDestinatario = entry.getKey();
-                            
-                            if (DatabaseManager.estaBloqueado(nombreDestinatario, idCliente)) {
-                                continue;
-                            }
-                            
-                            if (DatabaseManager.estaBloqueado(idCliente, nombreDestinatario)) {
-                                continue;
-                            }
-                        }
-                        
-                        cliente.salida.writeUTF(mensajeBroadcast);
-                    }
-                    
-                    if (!autenticado) {
-                        salida.writeUTF("Mensajes restantes: " + (3 - mensajesEnviados));
-                    }
-                }
+               } else {
+    String remitente = idCliente;
+    String mensajeBroadcast = "[" + grupoActual + "][" + remitente + "]: " + mensaje;
+    
+    DatabaseManager.guardarMensajeGrupo(grupoActual, remitente, mensaje);
+    
+    for (Map.Entry<String, UnCliente> entry : ServidorMulti.clientes.entrySet()) {
+        UnCliente cliente = entry.getValue();
+        
+        if (cliente == this) {
+            continue;
+        }
+        
+        if (!cliente.autenticado) {
+            continue;
+        }
+        
+        if (!cliente.getGrupoActual().equals(grupoActual)) {
+            continue;
+        }
+        
+        if (autenticado) {
+            String nombreDestinatario = entry.getKey();
+            
+            if (DatabaseManager.estaBloqueado(nombreDestinatario, idCliente)) {
+                continue;
+            }
+            
+            if (DatabaseManager.estaBloqueado(idCliente, nombreDestinatario)) {
+                continue;
+            }
+        }
+        
+        cliente.salida.writeUTF(mensajeBroadcast);
+    }
+    
+    if (!autenticado) {
+        salida.writeUTF("Mensajes restantes: " + (3 - mensajesEnviados));
+    }
+}
             }
         } catch (IOException ex) {
             System.out.println("Cliente " + idCliente + " desconectado.");
