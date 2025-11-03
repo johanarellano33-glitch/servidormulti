@@ -14,12 +14,13 @@ public class UnCliente implements Runnable {
     final DataOutputStream salida;
     final DataInputStream entrada;
     
-    private String idCliente;
-    private int mensajesEnviados = 0;
-    private boolean autenticado = false;
-    
-    // Almacena las invitaciones pendientes: clave = nombre del invitador
-    private String invitacionPendiente = null;
+   private String idCliente;
+private int mensajesEnviados = 0;
+private boolean autenticado = false;
+
+
+private String invitacionPendiente = null;
+private String grupoActual = "Todos";  
     
     UnCliente(Socket s, String id) throws IOException {
         this.idCliente = id;
@@ -27,35 +28,42 @@ public class UnCliente implements Runnable {
         entrada = new DataInputStream(s.getInputStream());
     }
 
-    /**
-     * Envía el menú de comandos disponibles
-     */
-    private void enviarMenuAyuda() throws IOException {
-        StringBuilder menu = new StringBuilder();
-        menu.append("\nCOMANDOS DISPONIBLES:\n");
-        menu.append("  HELP              - Muestra este menú de ayuda\n");
-        menu.append("  USERS             - Lista todos los usuarios registrados\n");
-        menu.append("  ONLINE            - Lista usuarios conectados ahora\n");
-        menu.append("  BLOCK nombre      - Bloquea a un usuario\n");
-        menu.append("  UNBLOCK nombre    - Desbloquea a un usuario\n");
-        menu.append("  BLOCKLIST         - Muestra tus usuarios bloqueados\n");
-        menu.append("  JUGAR nombre      - Invita a un usuario a jugar al gato\n");
-        menu.append("  ACEPTAR           - Acepta una invitación de juego\n");
-        menu.append("  RECHAZAR          - Rechaza una invitación de juego\n");
-        menu.append("  MOVER fila col    - Realiza un movimiento (ej: MOVER 0 1)\n");
-        menu.append("  RENDIRSE          - Te rindes en el juego actual\n");
-        menu.append("  JUEGOS            - Muestra tus juegos activos\n");
-        menu.append("  RANKING           - Muestra el ranking general de jugadores\n");
-        menu.append("  VS nombre1 nombre2 - Compara estadísticas entre 2 jugadores\n");
-        menu.append("  @nombre mensaje   - Envía mensaje privado\n");
-        menu.append("  mensaje           - Envía mensaje público (broadcast)\n");
-        menu.append("  salir             - Cierra la conexión\n");
-        salida.writeUTF(menu.toString());
-    }
+   
+   private void enviarMenuAyuda() throws IOException {
+    StringBuilder menu = new StringBuilder();
+    menu.append("\nCOMANDOS DISPONIBLES:\n");
+    menu.append("  HELP              - Muestra este menú de ayuda\n");
+    menu.append("  USERS             - Lista todos los usuarios registrados\n");
+    menu.append("  ONLINE            - Lista usuarios conectados ahora\n");
+    menu.append("  BLOCK nombre      - Bloquea a un usuario\n");
+    menu.append("  UNBLOCK nombre    - Desbloquea a un usuario\n");
+    menu.append("  BLOCKLIST         - Muestra tus usuarios bloqueados\n");
+    menu.append("\n--- GRUPOS ---\n");
+    menu.append("  GRUPOS            - Lista todos los grupos disponibles\n");
+    menu.append("  MISGRUPOS         - Lista tus grupos\n");
+    menu.append("  CREARGRUPO nombre - Crea un nuevo grupo\n");
+    menu.append("  UNIRGRUPO nombre  - Te unes a un grupo\n");
+    menu.append("  SALIRGRUPO nombre - Sales de un grupo\n");
+    menu.append("  BORRARGRUPO nombre - Borra un grupo (solo creador)\n");
+    menu.append("  GRUPO nombre      - Cambia al grupo especificado\n");
+    menu.append("  GRUPOACTUAL       - Muestra en qué grupo estás\n");
+    menu.append("\n--- JUEGOS ---\n");
+    menu.append("  JUGAR nombre      - Invita a un usuario a jugar al gato\n");
+    menu.append("  ACEPTAR           - Acepta una invitación de juego\n");
+    menu.append("  RECHAZAR          - Rechaza una invitación de juego\n");
+    menu.append("  MOVER fila col    - Realiza un movimiento (ej: MOVER 0 1)\n");
+    menu.append("  RENDIRSE          - Te rindes en el juego actual\n");
+    menu.append("  JUEGOS            - Muestra tus juegos activos\n");
+    menu.append("  RANKING           - Muestra el ranking general de jugadores\n");
+    menu.append("  VS nombre1 nombre2 - Compara estadísticas entre 2 jugadores\n");
+    menu.append("\n--- MENSAJES ---\n");
+    menu.append("  @nombre mensaje   - Envía mensaje privado\n");
+    menu.append("  mensaje           - Envía mensaje al grupo actual\n");
+    menu.append("  salir             - Cierra la conexión\n");
+    salida.writeUTF(menu.toString());
+}
 
-    /**
-     * Envía mensaje de bienvenida después del login
-     */
+ 
     private void enviarMensajeBienvenida() throws IOException {
         StringBuilder bienvenida = new StringBuilder();
         bienvenida.append("\nInicio de sesión exitoso. Bienvenido ").append(idCliente).append("!\n");
@@ -76,7 +84,7 @@ public class UnCliente implements Runnable {
                 String[] partesComando = mensaje.split(" ", 3);
                 String comando = partesComando.length > 0 ? partesComando[0].toUpperCase() : "";
 
-                // --- 1. Comando HELP ---
+             
                 if (comando.equals("HELP")) {
                     if (!autenticado) {
                         salida.writeUTF("Debes iniciar sesión para ver los comandos. Usa: LOGIN nombre password");
@@ -86,7 +94,7 @@ public class UnCliente implements Runnable {
                     continue;
                 }
 
-                // --- 2. Comando USERS (listar todos los usuarios registrados) ---
+             
                 if (comando.equals("USERS")) {
                     if (!autenticado) {
                         salida.writeUTF("Error: Debes estar autenticado para ver la lista de usuarios.");
@@ -112,7 +120,7 @@ public class UnCliente implements Runnable {
                     continue;
                 }
 
-                // --- 3. Comando ONLINE (listar usuarios conectados) ---
+              
                 if (comando.equals("ONLINE")) {
                     if (!autenticado) {
                         salida.writeUTF("Error: Debes estar autenticado para ver usuarios conectados.");
@@ -134,7 +142,7 @@ public class UnCliente implements Runnable {
                     continue;
                 }
 
-                // --- 4. Manejo de comandos REGISTER / LOGIN ---
+             
                 if (comando.equals("REGISTER") || comando.equals("LOGIN")) {
                     if (autenticado) {
                         salida.writeUTF("Ya estás autenticado como: " + idCliente);
@@ -171,7 +179,7 @@ public class UnCliente implements Runnable {
                     continue;
                 }
                 
-                // --- 5. Comandos BLOCK / UNBLOCK / BLOCKLIST ---
+              
                 if (comando.equals("BLOCK")) {
                     if (!autenticado) {
                         salida.writeUTF("Error: Debes estar autenticado para bloquear usuarios.");
@@ -245,7 +253,7 @@ public class UnCliente implements Runnable {
                     continue;
                 }
                 
-                // --- 6. Comando JUGAR (invitar a jugar al gato) ---
+             
                 if (comando.equals("JUGAR")) {
                     if (!autenticado) {
                         salida.writeUTF("Error: Debes estar autenticado para jugar.");
@@ -259,20 +267,20 @@ public class UnCliente implements Runnable {
                     
                     String oponente = partesComando[1];
                     
-                    // Verificar que el oponente no sea el mismo usuario
+               
                     if (oponente.equals(idCliente)) {
                         salida.writeUTF("Error: No puedes jugar contigo mismo.");
                         continue;
                     }
                     
-                    // Verificar que el oponente esté conectado
+                
                     UnCliente clienteOponente = ServidorMulti.clientes.get(oponente);
                     if (clienteOponente == null) {
                         salida.writeUTF("Error: El usuario '" + oponente + "' no está conectado.\nUsa ONLINE para ver usuarios conectados.");
                         continue;
                     }
                     
-                    // Verificar que no haya bloqueos
+          
                     if (DatabaseManager.estaBloqueado(oponente, idCliente)) {
                         salida.writeUTF("Error: No puedes jugar con '" + oponente + "' porque te ha bloqueado.");
                         continue;
@@ -282,15 +290,13 @@ public class UnCliente implements Runnable {
                         salida.writeUTF("Error: No puedes jugar con '" + oponente + "' porque lo has bloqueado.");
                         continue;
                     }
-                    
-                    // Verificar que no exista ya un juego entre estos dos jugadores
+               
                     String claveJuego = ServidorMulti.generarClaveJuego(idCliente, oponente);
                     if (ServidorMulti.juegosActivos.containsKey(claveJuego)) {
                         salida.writeUTF("Error: Ya tienes un juego activo con '" + oponente + "'.");
                         continue;
                     }
-                    
-                    // Enviar invitación al oponente
+              
                     clienteOponente.invitacionPendiente = idCliente;
                     clienteOponente.salida.writeUTF("\n*** " + idCliente + " te ha invitado a jugar al GATO ***\n" +
                                                      "Escribe ACEPTAR para jugar o RECHAZAR para declinar.");
@@ -298,7 +304,7 @@ public class UnCliente implements Runnable {
                     continue;
                 }
                 
-                // --- 7. Comando ACEPTAR (aceptar invitación de juego) ---
+       
                 if (comando.equals("ACEPTAR")) {
                     if (!autenticado) {
                         salida.writeUTF("Error: Debes estar autenticado.");
@@ -319,7 +325,7 @@ public class UnCliente implements Runnable {
                         continue;
                     }
                     
-                    // Crear el juego
+         
                     Random random = new Random();
                     boolean invitadorEmpieza = random.nextBoolean();
                     
@@ -329,7 +335,7 @@ public class UnCliente implements Runnable {
                     
                     invitacionPendiente = null;
                     
-                    // Notificar a ambos jugadores
+            
                     String tablero = juego.obtenerTableroTexto();
                     String infoJuego = "\n*** JUEGO INICIADO ***\n" +
                                        invitador + " (" + juego.getSimbolo(invitador) + ") vs " + 
@@ -343,7 +349,7 @@ public class UnCliente implements Runnable {
                     continue;
                 }
                 
-                // --- 8. Comando RECHAZAR (rechazar invitación) ---
+            
                 if (comando.equals("RECHAZAR")) {
                     if (!autenticado) {
                         salida.writeUTF("Error: Debes estar autenticado.");
@@ -367,7 +373,7 @@ public class UnCliente implements Runnable {
                     continue;
                 }
                 
-                // --- 9. Comando MOVER (realizar un movimiento en el gato) ---
+             
                 if (comando.equals("MOVER")) {
                     if (!autenticado) {
                         salida.writeUTF("Error: Debes estar autenticado.");
@@ -379,7 +385,7 @@ public class UnCliente implements Runnable {
                         continue;
                     }
                     
-                    // Buscar si el usuario tiene algún juego activo
+                 
                     gato juegoActual = null;
                     String claveJuegoActual = null;
                     String oponente = null;
@@ -409,7 +415,7 @@ public class UnCliente implements Runnable {
                         continue;
                     }
                     
-                    // Realizar el movimiento
+           
                     if (!juegoActual.realizarMovimiento(idCliente, fila, columna)) {
                         if (!juegoActual.getTurnoActual().equals(idCliente)) {
                             salida.writeUTF("Error: No es tu turno. Espera a que " + oponente + " haga su movimiento.");
@@ -421,7 +427,7 @@ public class UnCliente implements Runnable {
                         continue;
                     }
                     
-                    // Mostrar el tablero actualizado a ambos jugadores
+                
                     String tablero = juegoActual.obtenerTableroTexto();
                     UnCliente clienteOponente = ServidorMulti.clientes.get(oponente);
                     
@@ -429,13 +435,13 @@ public class UnCliente implements Runnable {
                         String resultado;
                         if (juegoActual.getGanador().equals("EMPATE")) {
                             resultado = "\n*** JUEGO TERMINADO - EMPATE ***\n" + tablero;
-                            // Registrar empate para ambos jugadores
+                   
                             DatabaseManager.registrarEmpate(idCliente);
                             DatabaseManager.registrarEmpate(oponente);
                         } else {
                             resultado = "\n*** JUEGO TERMINADO ***\n" + tablero + 
                                        "GANADOR: " + juegoActual.getGanador() + "!";
-                            // Registrar victoria y derrota
+                    
                             DatabaseManager.registrarVictoria(juegoActual.getGanador());
                             String perdedor = juegoActual.getGanador().equals(idCliente) ? oponente : idCliente;
                             DatabaseManager.registrarDerrota(perdedor);
@@ -457,14 +463,14 @@ public class UnCliente implements Runnable {
                     continue;
                 }
                 
-                // --- 10. Comando RENDIRSE ---
+         
                 if (comando.equals("RENDIRSE")) {
                     if (!autenticado) {
                         salida.writeUTF("Error: Debes estar autenticado.");
                         continue;
                     }
                     
-                    // Buscar si el usuario tiene algún juego activo
+               
                     gato juegoActual = null;
                     String claveJuegoActual = null;
                     String oponente = null;
@@ -496,7 +502,7 @@ public class UnCliente implements Runnable {
                     continue;
                 }
                 
-                // --- 11. Comando JUEGOS (ver juegos activos) ---
+              
                 if (comando.equals("JUEGOS")) {
                     if (!autenticado) {
                         salida.writeUTF("Error: Debes estar autenticado.");
@@ -525,7 +531,7 @@ public class UnCliente implements Runnable {
                     continue;
                 }
                 
-                // --- 12. Comando RANKING (ver ranking general) ---
+               
                 if (comando.equals("RANKING")) {
                     if (!autenticado) {
                         salida.writeUTF("Error: Debes estar autenticado para ver el ranking.");
@@ -547,7 +553,7 @@ public class UnCliente implements Runnable {
                     continue;
                 }
                 
-                // --- 13. Comando VS (comparar estadísticas entre dos jugadores) ---
+            
                 if (comando.equals("VS")) {
                     if (!autenticado) {
                         salida.writeUTF("Error: Debes estar autenticado.");
@@ -567,7 +573,7 @@ public class UnCliente implements Runnable {
                     continue;
                 }
                 
-                // --- 14. Verificación de permisos para enviar ---
+             
                 if (!autenticado && mensajesEnviados >= 3) {
                     salida.writeUTF("Límite de 3 mensajes alcanzado. Debes autenticarte (ej: LOGIN nombre password) para enviar más.");
                     continue;
@@ -577,7 +583,7 @@ public class UnCliente implements Runnable {
                     mensajesEnviados++;
                 }
 
-                // --- 13. Manejo de mensajes privados (@) ---
+           
                 if (mensaje.startsWith("@")) {
                     String[] partes = mensaje.split(" ", 2);
                     if (partes.length < 2) {
@@ -613,7 +619,7 @@ public class UnCliente implements Runnable {
                     this.salida.writeUTF("Mensaje enviado a " + aQuien);
                     
                 } else {
-                    // --- 14. Manejo de mensajes públicos (Broadcast) ---
+             
                     String remitente = idCliente;
                     String mensajeBroadcast = "[" + remitente + "]: " + mensaje;
                     
@@ -647,7 +653,7 @@ public class UnCliente implements Runnable {
         } catch (IOException ex) {
             System.out.println("Cliente " + idCliente + " desconectado.");
             
-            // Terminar todos los juegos donde participe este cliente
+        
             if (autenticado) {
                 for (Map.Entry<String, gato> entry : ServidorMulti.juegosActivos.entrySet()) {
                     gato juego = entry.getValue();
@@ -660,7 +666,7 @@ public class UnCliente implements Runnable {
                             try {
                                 clienteOponente.salida.writeUTF(idCliente + " se ha desconectado. Has ganado el juego por abandono.");
                             } catch (IOException e) {
-                                // Ignorar si el oponente también se desconectó
+                            
                             }
                         }
                         
