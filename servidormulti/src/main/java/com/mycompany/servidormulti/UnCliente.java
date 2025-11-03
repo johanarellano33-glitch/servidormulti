@@ -107,7 +107,7 @@ public String getGrupoActual() {
         StringBuilder bienvenida = new StringBuilder();
         bienvenida.append("\nInicio de sesión exitoso. Bienvenido ").append(idCliente).append("!\n");
         bienvenida.append("Tienes mensajes ilimitados.\n");
-        bienvenida.append("Escribe AYUDA para ver todos los comandos.\n");
+        bienvenida.append("Escribe HELP para ver todos los comandos.\n");
         salida.writeUTF(bienvenida.toString());
     }
 
@@ -247,7 +247,7 @@ public String getGrupoActual() {
                     String usuarioABloquear = partesComando[1];
                     
                     if (!DatabaseManager.usuarioExiste(usuarioABloquear)) {
-                        salida.writeUTF("Error: El usuario '" + usuarioABloquear + "' no existe.\nUsa USUARIOS para ver usuarios disponibles.");
+                        salida.writeUTF("Error: El usuario '" + usuarioABloquear + "' no existe.\nUsa USERS para ver usuarios disponibles.");
                         continue;
                     }
                     
@@ -271,7 +271,7 @@ public String getGrupoActual() {
                     }
                     
                     if (partesComando.length != 2) {
-                        salida.writeUTF("Error de sintaxis. Usa: DESBLOQURAT nombre_usuario\nPara ver bloqueados usa: LISTADEBLOQUEADOS");
+                        salida.writeUTF("Error de sintaxis. Usa: DESBLOQUEAR nombre_usuario\nPara ver bloqueados usa: LISTADEBLOQUEADOS");
                         continue;
                     }
                     
@@ -832,7 +832,7 @@ public String getGrupoActual() {
                     UnCliente clienteDestino = ServidorMulti.clientes.get(aQuien);
                     
                     if (clienteDestino == null) {
-                        salida.writeUTF("Error: Cliente con nombre '" + aQuien + "' no encontrado o desconectado.\nUsa LINEA para ver usuarios conectados.");
+                        salida.writeUTF("Error: Cliente con nombre '" + aQuien + "' no encontrado o desconectado.\nUsa ONLINE para ver usuarios conectados.");
                         if (!autenticado) mensajesEnviados--;
                         continue;
                     }
