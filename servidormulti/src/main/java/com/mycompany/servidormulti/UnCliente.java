@@ -552,7 +552,190 @@ private String grupoActual = "Todos";
                     }
                     continue;
                 }
+                if (comando.equals("GRUPOS")) {
+    if (!autenticado) {
+                        salida.writeUTF("Error: Debes estar autenticado para ver grupos.");
+                        continue;
+                    }
+                    
+                    List<String> grupos = DatabaseManager.obtenerTodosLosGrupos();
+                    
+                    if (grupos.isEmpty()) {
+                        salida.writeUTF("No hay grupos disponibles.");
+                    } else {
+                        StringBuilder sb = new StringBuilder("\nGRUPOS DISPONIBLES:\n");
+                        for (String grupo : grupos) {
+                            sb.append("  - ").append(grupo).append("\n");
+                        }
+                        sb.append("Total: ").append(grupos.size()).append(" grupos");
+                        salida.writeUTF(sb.toString());
+                    }
+                    continue;
+                }
                 
+                if (comando.equals("MISGRUPOS")) {
+                    if (!autenticado) {
+                        salida.writeUTF("Error: Debes estar autenticado.");
+                        continue;
+                    }
+                    
+                    List<String> misGrupos = DatabaseManager.obtenerGruposDeUsuario(idCliente);
+                    
+                    if (misGrupos.isEmpty()) {
+                        salida.writeUTF("No perteneces a ningún grupo.");
+                    } else {
+                        StringBuilder sb = new StringBuilder("\nTUS GRUPOS:\n");
+                        for (String grupo : misGrupos) {
+                            if (grupo.equals(grupoActual)) {
+                                sb.append("  - ").append(grupo).append(" (ACTUAL)\n");
+                            } else {
+                                sb.append("  - ").append(grupo).append("\n");
+                            }
+                        }
+                        sb.append("Total: ").append(misGrupos.size()).append(" grupos");
+                        salida.writeUTF(sb.toString());
+                    }
+                    continue;
+                }
+                
+                if (comando.equals("CREARGRUPO")) {
+                    if (!autenticado) {
+                        salida.writeUTF("Error: Debes estar autenticado para crear grupos.");
+                        continue;
+                    }
+                    
+                    if (partesComando.length != 2) {
+                        salida.writeUTF("Error de sintaxis. Usa: CREARGRUPO nombre_del_grupo");
+                        continue;
+                    }
+                    
+                    String nombreGrupo = partesComando[1];
+                    
+                    if (DatabaseManager.crearGrupo(nombreGrupo, idCliente)) {
+                        salida.writeUTF("Grupo '" + nombreGrupo + "' creado exitosamente. Te has unido automáticamente.");
+                    } else {
+                        salida.writeUTF("Error: No se pudo crear el grupo. Puede que ya exista o el nombre 'Todos' está reservado.");
+                    }
+                    continue;
+                }
+                
+                if (comando.equals("UNIRGRUPO")) {
+                    if (!autenticado) {
+                        salida.writeUTF("Error: Debes estar autenticado.");
+                        continue;
+                    }
+                    
+                    if (partesComando.length != 2) {
+                        salida.writeUTF("Error de sintaxis. Usa: UNIRGRUPO nombre_del_grupo");
+                        continue;
+                    }
+                    
+                    String nombreGrupo = partesComando[1];
+                    
+                    if (!DatabaseManager.grupoExiste(nombreGrupo)) {
+                        salida.writeUTF("Error: El grupo '" + nombreGrupo + "' no existe. Usa GRUPOS para ver los disponibles.");
+                        continue;
+                    }
+                    
+                    if (DatabaseManager.unirseAGrupo(nombreGrupo, idCliente)) {
+                        salida.writeUTF("Te has unido al grupo '" + nombreGrupo + "'. Usa: GRUPO " + nombreGrupo + " para cambiar a él.");
+                    } else {
+                        salida.writeUTF("Error: Ya eres miembro de este grupo.");
+                    }
+                    continue;
+                }
+                
+                if (comando.equals("SALIRGRUPO")) {
+                    if (!autenticado) {
+                        salida.writeUTF("Error: Debes estar autenticado.");
+                        continue;
+                    }
+                    
+                    if (partesComando.length != 2) {
+                        salida.writeUTF("Error de sintaxis. Usa: SALIRGRUPO nombre_del_grupo");
+                        continue;
+                    }
+                    
+                    String nombreGrupo = partesComando[1];
+                    
+                    if (DatabaseManager.salirDeGrupo(nombreGrupo, idCliente)) {
+                        if (grupoActual.equals(nombreGrupo)) {
+                            grupoActual = "Todos";
+                        }
+                        salida.writeUTF("Has salido del grupo '" + nombreGrupo + "'.");
+                    } else {
+                        salida.writeUTF("Error: No puedes salir del grupo 'Todos' o no eres miembro de este grupo.");
+                    }
+                    continue;
+                }
+                
+                if (comando.equals("BORRARGRUPO")) {
+                    if (!autenticado) {
+                        salida.writeUTF("Error: Debes estar autenticado.");
+                        continue;
+                    }
+                    
+                    if (partesComando.length != 2) {
+                        salida.writeUTF("Error de sintaxis. Usa: BORRARGRUPO nombre_del_grupo");
+                        continue;
+                    }
+                    
+                    String nombreGrupo = partesComando[1];
+                    
+                    if (DatabaseManager.eliminarGrupo(nombreGrupo, idCliente)) {
+                        salida.writeUTF("Grupo '" + nombreGrupo + "' eliminado correctamente.");
+                    } else {
+                        salida.writeUTF("Error: No se pudo eliminar. Solo el creador puede borrar un grupo, y 'Todos' no se puede borrar.");
+                    }
+                    continue;
+                }
+                
+                if (comando.equals("GRUPO")) {
+                    if (!autenticado) {
+                        salida.writeUTF("Error: Debes estar autenticado.");
+                        continue;
+                    }
+                    
+                    if (partesComando.length != 2) {
+                        salida.writeUTF("Error de sintaxis. Usa: GRUPO nombre_del_grupo");
+                        continue;
+                    }
+                    
+                    String nombreGrupo = partesComando[1];
+                    
+                    if (!DatabaseManager.grupoExiste(nombreGrupo)) {
+                        salida.writeUTF("Error: El grupo '" + nombreGrupo + "' no existe.");
+                        continue;
+                    }
+                    
+                    if (!DatabaseManager.esMiembroDeGrupo(nombreGrupo, idCliente)) {
+                        salida.writeUTF("Error: No eres miembro del grupo '" + nombreGrupo + "'. Usa: UNIRGRUPO " + nombreGrupo);
+                        continue;
+                    }
+                    
+                    grupoActual = nombreGrupo;
+                    salida.writeUTF("Cambiado al grupo: " + nombreGrupo);
+                    
+                    List<String> mensajesNoLeidos = DatabaseManager.obtenerMensajesNoLeidos(nombreGrupo, idCliente);
+                    if (!mensajesNoLeidos.isEmpty()) {
+                        StringBuilder sb = new StringBuilder("\nMENSAJES NO LEIDOS:\n");
+                        for (String msg : mensajesNoLeidos) {
+                            sb.append(msg).append("\n");
+                        }
+                        salida.writeUTF(sb.toString());
+                    }
+                    continue;
+                }
+                
+                if (comando.equals("GRUPOACTUAL")) {
+                    if (!autenticado) {
+                        salida.writeUTF("Error: Debes estar autenticado.");
+                        continue;
+                    }
+                    
+                    salida.writeUTF("Estás en el grupo: " + grupoActual);
+                    continue;
+                }
             
                 if (comando.equals("VS")) {
                     if (!autenticado) {
