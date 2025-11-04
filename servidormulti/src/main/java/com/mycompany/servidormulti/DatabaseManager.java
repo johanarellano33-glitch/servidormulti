@@ -10,13 +10,11 @@ public class DatabaseManager {
     private static final String DB_URL = "jdbc:sqlite:chat.db";
     private static Connection conn = null;
 
-    /**
-     * Inicializa la conexión y crea las tablas necesarias
-     */
+   
     public static void inicializar() {
         try {
             conn = DriverManager.getConnection(DB_URL);
-            conn.setAutoCommit(true); // Activar autocommit explícitamente
+            conn.setAutoCommit(true); 
             crearTablas();
             System.out.println("Base de datos inicializada correctamente.");
         } catch (SQLException e) {
@@ -24,9 +22,7 @@ public class DatabaseManager {
         }
     }
 
-    /**
-     * Crea las tablas usuarios, bloqueos y estadisticas si no existen
-     */
+  
     private static void crearTablas() throws SQLException {
     String sqlUsuarios = "CREATE TABLE IF NOT EXISTS usuarios ("
             + "id INTEGER PRIMARY KEY AUTOINCREMENT, "
@@ -100,14 +96,12 @@ public class DatabaseManager {
         stmt.execute(sqlMensajesGrupo);
         stmt.execute(sqlMensajesLeidos);
         
-        // Crear grupo "Todos" si no existe
+        
         crearGrupoTodos();
     }
 }
 
-/**
- * Crea el grupo especial "Todos" si no existe
- */
+
 private static void crearGrupoTodos() {
     String sql = "INSERT OR IGNORE INTO grupos (nombre, creador) VALUES ('Todos', 'SISTEMA')";
     try (Statement stmt = conn.createStatement()) {
@@ -116,9 +110,7 @@ private static void crearGrupoTodos() {
         System.err.println("Error al crear grupo Todos: " + e.getMessage());
     }
 }
-    /**
-     * Registra un nuevo usuario en la base de datos
-     */
+    
     public static boolean registrarUsuario(String nombre, String password) {
         String sql = "INSERT INTO usuarios (nombre, password) VALUES (?, ?)";
         
@@ -136,9 +128,7 @@ private static void crearGrupoTodos() {
         }
     }
 
-    /**
-     * Verifica las credenciales de un usuario
-     */
+    
     public static boolean verificarCredenciales(String nombre, String password) {
         String sql = "SELECT password FROM usuarios WHERE nombre = ?";
         
@@ -157,9 +147,7 @@ private static void crearGrupoTodos() {
         }
     }
 
-    /**
-     * Verifica si un usuario existe en la base de datos
-     */
+    
     public static boolean usuarioExiste(String nombre) {
         String sql = "SELECT 1 FROM usuarios WHERE nombre = ?";
         
@@ -173,9 +161,7 @@ private static void crearGrupoTodos() {
         }
     }
 
-    /**
-     * Obtiene la lista de todos los usuarios registrados
-     */
+    
     public static List<String> obtenerTodosLosUsuarios() {
         List<String> usuarios = new ArrayList<>();
         String sql = "SELECT nombre FROM usuarios ORDER BY nombre";
@@ -193,9 +179,7 @@ private static void crearGrupoTodos() {
         return usuarios;
     }
 
-    /**
-     * Obtiene la lista de usuarios conectados actualmente
-     */
+   
     public static List<String> obtenerUsuariosConectados(String usuarioActual) {
         List<String> conectados = new ArrayList<>();
         
@@ -208,9 +192,7 @@ private static void crearGrupoTodos() {
         return conectados;
     }
 
-    /**
-     * Bloquea un usuario
-     */
+    
     public static boolean bloquearUsuario(String usuarioBloqueador, String usuarioBloqueado) {
         if (usuarioBloqueador.equals(usuarioBloqueado)) {
             return false;
@@ -232,9 +214,7 @@ private static void crearGrupoTodos() {
         }
     }
 
-    /**
-     * Desbloquea un usuario
-     */
+   
     public static boolean desbloquearUsuario(String usuarioBloqueador, String usuarioBloqueado) {
         String sql = "DELETE FROM bloqueos WHERE usuario_bloqueador = ? AND usuario_bloqueado = ?";
         
@@ -249,9 +229,7 @@ private static void crearGrupoTodos() {
         }
     }
 
-    /**
-     * Verifica si un usuario tiene bloqueado a otro
-     */
+   
     public static boolean estaBloqueado(String usuarioBloqueador, String usuarioBloqueado) {
         String sql = "SELECT 1 FROM bloqueos WHERE usuario_bloqueador = ? AND usuario_bloqueado = ?";
         
@@ -266,9 +244,7 @@ private static void crearGrupoTodos() {
         }
     }
 
-    /**
-     * Obtiene la lista de usuarios bloqueados por un usuario
-     */
+   
     public static Set<String> obtenerBloqueados(String usuarioBloqueador) {
         Set<String> bloqueados = new HashSet<>();
         String sql = "SELECT usuario_bloqueado FROM bloqueos WHERE usuario_bloqueador = ?";
@@ -287,9 +263,7 @@ private static void crearGrupoTodos() {
         return bloqueados;
     }
 
-    /**
-     * Inicializa las estadísticas de un jugador si no existen
-     */
+    
     public static void inicializarEstadisticas(String jugador) {
         String sql = "INSERT OR IGNORE INTO estadisticas (jugador, victorias, empates, derrotas, puntos) VALUES (?, 0, 0, 0, 0)";
         
@@ -301,9 +275,7 @@ private static void crearGrupoTodos() {
         }
     }
 
-    /**
-     * Registra una victoria para un jugador (2 puntos)
-     */
+   
     public static void registrarVictoria(String jugador) {
         inicializarEstadisticas(jugador);
         String sql = "UPDATE estadisticas SET victorias = victorias + 1, puntos = puntos + 2 WHERE jugador = ?";
@@ -316,9 +288,7 @@ private static void crearGrupoTodos() {
         }
     }
 
-    /**
-     * Registra un empate para un jugador (1 punto)
-     */
+   
     public static void registrarEmpate(String jugador) {
         inicializarEstadisticas(jugador);
         String sql = "UPDATE estadisticas SET empates = empates + 1, puntos = puntos + 1 WHERE jugador = ?";
@@ -331,9 +301,7 @@ private static void crearGrupoTodos() {
         }
     }
 
-    /**
-     * Registra una derrota para un jugador (0 puntos)
-     */
+   
     public static void registrarDerrota(String jugador) {
         inicializarEstadisticas(jugador);
         String sql = "UPDATE estadisticas SET derrotas = derrotas + 1 WHERE jugador = ?";
@@ -346,9 +314,7 @@ private static void crearGrupoTodos() {
         }
     }
 
-    /**
-     * Obtiene el ranking general de jugadores ordenado por puntos
-     */
+   
     public static List<String> obtenerRankingGeneral() {
         List<String> ranking = new ArrayList<>();
         String sql = "SELECT jugador, victorias, empates, derrotas, puntos " +
@@ -379,11 +345,9 @@ private static void crearGrupoTodos() {
         return ranking;
     }
 
-    /**
-     * Obtiene las estadísticas entre dos jugadores específicos
-     */
+    
     public static String obtenerEstadisticasVS(String jugador1, String jugador2) {
-        // Primero verificar que ambos existan
+       
         if (!usuarioExiste(jugador1)) {
             return "Error: El usuario '" + jugador1 + "' no existe.";
         }
@@ -440,14 +404,10 @@ private static void crearGrupoTodos() {
             return "Error al obtener estadísticas.";
         }
     }
-// ============= MÉTODOS PARA GRUPOS =============
 
-/**
- * Crea un nuevo grupo
- */
 public static boolean crearGrupo(String nombreGrupo, String creador) {
     if (nombreGrupo.equalsIgnoreCase("Todos")) {
-        return false; // No se puede crear grupo con nombre "Todos"
+        return false; 
     }
     
     String sql = "INSERT INTO grupos (nombre, creador) VALUES (?, ?)";
@@ -457,46 +417,44 @@ public static boolean crearGrupo(String nombreGrupo, String creador) {
         pstmt.setString(2, creador);
         pstmt.executeUpdate();
         
-        // El creador se une automáticamente al grupo
+        
         unirseAGrupo(nombreGrupo, creador);
         return true;
     } catch (SQLException e) {
         if (e.getErrorCode() == 19) {
-            return false; // Grupo ya existe
+            return false; 
         }
         System.err.println("Error al crear grupo: " + e.getMessage());
         return false;
     }
 }
 
-/**
- * Elimina un grupo (excepto "Todos")
- */
+
 public static boolean eliminarGrupo(String nombreGrupo, String usuario) {
     if (nombreGrupo.equalsIgnoreCase("Todos")) {
-        return false; // No se puede eliminar el grupo "Todos"
+        return false; 
     }
     
-    // Verificar si el usuario es el creador
+   
     String sqlVerificar = "SELECT creador FROM grupos WHERE nombre = ?";
     try (PreparedStatement pstmt = conn.prepareStatement(sqlVerificar)) {
         pstmt.setString(1, nombreGrupo);
         ResultSet rs = pstmt.executeQuery();
         
         if (!rs.next()) {
-            return false; // Grupo no existe
+            return false; 
         }
         
         String creador = rs.getString("creador");
         if (!creador.equals(usuario)) {
-            return false; // Solo el creador puede eliminar el grupo
+            return false; 
         }
     } catch (SQLException e) {
         System.err.println("Error al verificar creador: " + e.getMessage());
         return false;
     }
     
-    // Eliminar el grupo y sus datos relacionados
+   
     try (Statement stmt = conn.createStatement()) {
         stmt.execute("DELETE FROM mensajes_leidos WHERE mensaje_id IN (SELECT id FROM mensajes_grupo WHERE grupo_nombre = '" + nombreGrupo + "')");
         stmt.execute("DELETE FROM mensajes_grupo WHERE grupo_nombre = '" + nombreGrupo + "'");
@@ -509,11 +467,9 @@ public static boolean eliminarGrupo(String nombreGrupo, String usuario) {
     }
 }
 
-/**
- * Une a un usuario a un grupo
- */
+
 public static boolean unirseAGrupo(String nombreGrupo, String usuario) {
-    // Verificar que el grupo exista
+    
     if (!grupoExiste(nombreGrupo)) {
         return false;
     }
@@ -527,16 +483,14 @@ public static boolean unirseAGrupo(String nombreGrupo, String usuario) {
         return true;
     } catch (SQLException e) {
         if (e.getErrorCode() == 19) {
-            return false; // Ya es miembro
+            return false; 
         }
         System.err.println("Error al unirse al grupo: " + e.getMessage());
         return false;
     }
 }
 
-/**
- * Saca a un usuario de un grupo
- */
+
 public static boolean salirDeGrupo(String nombreGrupo, String usuario) {
     if (nombreGrupo.equalsIgnoreCase("Todos")) {
         return false; // No se puede salir del grupo "Todos"
@@ -555,9 +509,7 @@ public static boolean salirDeGrupo(String nombreGrupo, String usuario) {
     }
 }
 
-/**
- * Verifica si un grupo existe
- */
+
 public static boolean grupoExiste(String nombreGrupo) {
     String sql = "SELECT 1 FROM grupos WHERE nombre = ?";
     
@@ -571,9 +523,7 @@ public static boolean grupoExiste(String nombreGrupo) {
     }
 }
 
-/**
- * Verifica si un usuario es miembro de un grupo
- */
+
 public static boolean esMiembroDeGrupo(String nombreGrupo, String usuario) {
     String sql = "SELECT 1 FROM miembros_grupo WHERE grupo_nombre = ? AND usuario = ?";
     
@@ -588,9 +538,7 @@ public static boolean esMiembroDeGrupo(String nombreGrupo, String usuario) {
     }
 }
 
-/**
- * Obtiene la lista de grupos disponibles
- */
+
 public static List<String> obtenerTodosLosGrupos() {
     List<String> grupos = new ArrayList<>();
     String sql = "SELECT nombre, creador FROM grupos ORDER BY nombre";
@@ -610,9 +558,7 @@ public static List<String> obtenerTodosLosGrupos() {
     return grupos;
 }
 
-/**
- * Obtiene los grupos de los que un usuario es miembro
- */
+
 public static List<String> obtenerGruposDeUsuario(String usuario) {
     List<String> grupos = new ArrayList<>();
     String sql = "SELECT grupo_nombre FROM miembros_grupo WHERE usuario = ? ORDER BY grupo_nombre";
@@ -631,9 +577,7 @@ public static List<String> obtenerGruposDeUsuario(String usuario) {
     return grupos;
 }
 
-/**
- * Guarda un mensaje en un grupo
- */
+
 public static void guardarMensajeGrupo(String nombreGrupo, String remitente, String mensaje) {
     String sql = "INSERT INTO mensajes_grupo (grupo_nombre, remitente, mensaje) VALUES (?, ?, ?)";
     
@@ -647,9 +591,7 @@ public static void guardarMensajeGrupo(String nombreGrupo, String remitente, Str
     }
 }
 
-/**
- * Obtiene mensajes no leídos de un grupo para un usuario
- */
+
 public static List<String> obtenerMensajesNoLeidos(String nombreGrupo, String usuario) {
     List<String> mensajes = new ArrayList<>();
     String sql = "SELECT m.id, m.remitente, m.mensaje, m.fecha_envio " +
@@ -671,7 +613,7 @@ public static List<String> obtenerMensajesNoLeidos(String nombreGrupo, String us
             
             mensajes.add("[" + fecha.substring(0, 16) + "] " + remitente + ": " + mensaje);
             
-            // Marcar como leído
+          
             marcarMensajeComoLeido(usuario, mensajeId);
         }
     } catch (SQLException e) {
@@ -681,9 +623,7 @@ public static List<String> obtenerMensajesNoLeidos(String nombreGrupo, String us
     return mensajes;
 }
 
-/**
- * Marca un mensaje como leído por un usuario
- */
+
 private static void marcarMensajeComoLeido(String usuario, int mensajeId) {
     String sql = "INSERT OR IGNORE INTO mensajes_leidos (usuario, mensaje_id) VALUES (?, ?)";
     

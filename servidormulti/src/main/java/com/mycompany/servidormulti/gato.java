@@ -129,7 +129,7 @@ public class gato {
             return;
         }
         
-        // Verificar empate (tablero lleno)
+      
         boolean tableroLleno = true;
         for (int i = 0; i < 3; i++) {
             for (int j = 0; j < 3; j++) {

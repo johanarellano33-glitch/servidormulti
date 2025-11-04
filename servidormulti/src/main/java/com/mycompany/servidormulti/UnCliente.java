@@ -4,6 +4,7 @@ import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.net.Socket;
+import java.util.ArrayList;
 import java.util.Map;
 import java.util.Set;
 import java.util.List;
@@ -30,40 +31,75 @@ public String getGrupoActual() {
         salida = new DataOutputStream(s.getOutputStream());
         entrada = new DataInputStream(s.getInputStream());
     }
+    private String paginarLista(List<String> lista, int paginaActual, int elementosPorPagina, String titulo) {
+    if (lista.isEmpty()) {
+        return "No hay elementos para mostrar.";
+    }
+    
+    int totalPaginas = (int) Math.ceil((double) lista.size() / elementosPorPagina);
+    
+    if (paginaActual < 1) paginaActual = 1;
+    if (paginaActual > totalPaginas) paginaActual = totalPaginas;
+    
+    int inicio = (paginaActual - 1) * elementosPorPagina;
+    int fin = Math.min(inicio + elementosPorPagina, lista.size());
+    
+    StringBuilder sb = new StringBuilder();
+    sb.append("\n").append(titulo).append(" (Página ").append(paginaActual).append(" de ").append(totalPaginas).append(")\n");
+    sb.append("=".repeat(50)).append("\n");
+    
+    for (int i = inicio; i < fin; i++) {
+        sb.append(lista.get(i)).append("\n");
+    }
+    
+    sb.append("=".repeat(50)).append("\n");
+    sb.append("Total: ").append(lista.size()).append(" elementos");
+    
+    if (paginaActual < totalPaginas) {
+        sb.append(" | Usa: comando " + (paginaActual + 1) + " para ver más");
+    }
+    
+    return sb.toString();
+}
 
    
-   private void enviarMenuAyuda() throws IOException {
-    StringBuilder menu = new StringBuilder();
-    menu.append("\nCOMANDOS DISPONIBLES:\n");
-    menu.append("  HELP              - Muestra este menú de ayuda\n");
-    menu.append("  USERS             - Lista todos los usuarios registrados\n");
-    menu.append("  ONLINE            - Lista usuarios conectados ahora\n");
-    menu.append("  BLOCK nombre      - Bloquea a un usuario\n");
-    menu.append("  UNBLOCK nombre    - Desbloquea a un usuario\n");
-    menu.append("  BLOCKLIST         - Muestra tus usuarios bloqueados\n");
-    menu.append("\n--- GRUPOS ---\n");
-    menu.append("  GRUPOS            - Lista todos los grupos disponibles\n");
-    menu.append("  MISGRUPOS         - Lista tus grupos\n");
-    menu.append("  CREARGRUPO nombre - Crea un nuevo grupo\n");
-    menu.append("  UNIRGRUPO nombre  - Te unes a un grupo\n");
-    menu.append("  SALIRGRUPO nombre - Sales de un grupo\n");
-    menu.append("  BORRARGRUPO nombre - Borra un grupo (solo creador)\n");
-    menu.append("  GRUPO nombre      - Cambia al grupo especificado\n");
-    menu.append("  GRUPOACTUAL       - Muestra en qué grupo estás\n");
-    menu.append("\n--- JUEGOS ---\n");
-    menu.append("  JUGAR nombre      - Invita a un usuario a jugar al gato\n");
-    menu.append("  ACEPTAR           - Acepta una invitación de juego\n");
-    menu.append("  RECHAZAR          - Rechaza una invitación de juego\n");
-    menu.append("  MOVER fila col    - Realiza un movimiento (ej: MOVER 0 1)\n");
-    menu.append("  RENDIRSE          - Te rindes en el juego actual\n");
-    menu.append("  JUEGOS            - Muestra tus juegos activos\n");
-    menu.append("  RANKING           - Muestra el ranking general de jugadores\n");
-    menu.append("  VS nombre1 nombre2 - Compara estadísticas entre 2 jugadores\n");
-    menu.append("\n--- MENSAJES ---\n");
-    menu.append("  @nombre mensaje   - Envía mensaje privado\n");
-    menu.append("  mensaje           - Envía mensaje al grupo actual\n");
-    menu.append("  salir             - Cierra la conexión\n");
-    salida.writeUTF(menu.toString());
+   private void enviarMenuAyuda(int pagina) throws IOException {
+    List<String> comandos = new ArrayList<>();
+    
+    comandos.add("  HELP [pagina]     - Muestra este menú de ayuda");
+    comandos.add("  USERS [pagina]    - Lista todos los usuarios registrados");
+    comandos.add("  ONLINE            - Lista usuarios conectados ahora");
+    comandos.add("  BLOCK nombre      - Bloquea a un usuario");
+    comandos.add("  UNBLOCK nombre    - Desbloquea a un usuario");
+    comandos.add("  BLOCKLIST         - Muestra tus usuarios bloqueados");
+    comandos.add("");
+    comandos.add("--- GRUPOS ---");
+    comandos.add("  GRUPOS [pagina]   - Lista todos los grupos disponibles");
+    comandos.add("  MISGRUPOS         - Lista tus grupos");
+    comandos.add("  CREARGRUPO nombre - Crea un nuevo grupo");
+    comandos.add("  UNIRGRUPO nombre  - Te unes a un grupo");
+    comandos.add("  SALIRGRUPO nombre - Sales de un grupo");
+    comandos.add("  BORRARGRUPO nombre - Borra un grupo (solo creador)");
+    comandos.add("  GRUPO nombre      - Cambia al grupo especificado");
+    comandos.add("  GRUPOACTUAL       - Muestra en qué grupo estás");
+    comandos.add("");
+    comandos.add("--- JUEGOS ---");
+    comandos.add("  JUGAR nombre      - Invita a un usuario a jugar al gato");
+    comandos.add("  ACEPTAR           - Acepta una invitación de juego");
+    comandos.add("  RECHAZAR          - Rechaza una invitación de juego");
+    comandos.add("  MOVER fila col    - Realiza un movimiento (ej: MOVER 0 1)");
+    comandos.add("  RENDIRSE          - Te rindes en el juego actual");
+    comandos.add("  JUEGOS            - Muestra tus juegos activos");
+    comandos.add("  RANKING [pagina]  - Muestra el ranking general de jugadores");
+    comandos.add("  VS nombre1 nombre2 - Compara estadísticas entre 2 jugadores");
+    comandos.add("");
+    comandos.add("--- MENSAJES ---");
+    comandos.add("  @nombre mensaje   - Envía mensaje privado");
+    comandos.add("  mensaje           - Envía mensaje al grupo actual");
+    comandos.add("  salir             - Cierra la conexión");
+    
+    String resultado = paginarLista(comandos, pagina, 10, "COMANDOS DISPONIBLES");
+    salida.writeUTF(resultado);
 }
 
  
@@ -88,14 +124,26 @@ public String getGrupoActual() {
                 String comando = partesComando.length > 0 ? partesComando[0].toUpperCase() : "";
 
              
-                if (comando.equals("HELP")) {
-                    if (!autenticado) {
-                        salida.writeUTF("Debes iniciar sesión para ver los comandos. Usa: LOGIN nombre password");
-                        continue;
-                    }
-                    enviarMenuAyuda();
-                    continue;
-                }
+                     
+   if (comando.equals("HELP")) {
+    if (!autenticado) {
+        salida.writeUTF("Debes iniciar sesión para ver los comandos. Usa: LOGIN nombre password");
+        continue;
+    }
+    
+    int pagina = 1;
+    if (partesComando.length == 2) {
+        try {
+            pagina = Integer.parseInt(partesComando[1]);
+        } catch (NumberFormatException e) {
+            salida.writeUTF("Error: El número de página debe ser un número válido.");
+            continue;
+        }
+    }
+    
+    enviarMenuAyuda(pagina);
+    continue;
+}
 
              
                 if (comando.equals("USERS")) {
