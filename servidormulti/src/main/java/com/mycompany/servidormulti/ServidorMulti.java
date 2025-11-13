@@ -4,67 +4,73 @@ import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 public class ServidorMulti {
     
-    static ConcurrentHashMap<String, UnCliente> clientes = new ConcurrentHashMap<>();
-    // Almacena los juegos activos: clave = "jugador1:jugador2" (ordenado alfabéticamente)
-    static ConcurrentHashMap<String, gato> juegosActivos = new ConcurrentHashMap<>();
+    private static final int PUERTO = 8080;
+    private static final int MAX_HILOS = 100;
     
-    /**
-     * Verifica si las credenciales coinciden (ahora usando DatabaseManager)
-     */
+    static ConcurrentHashMap<String, UnCliente> clientes = new ConcurrentHashMap<>();
+    static ConcurrentHashMap<String, gato> juegosActivos = new ConcurrentHashMap<>();
+    private static ExecutorService poolHilos;
+    
     public static boolean verificarCredenciales(String nombre, String password) {
         return DatabaseManager.verificarCredenciales(nombre, password);
     }
     
-    /**
-     * Registra un nuevo usuario (ahora usando DatabaseManager)
-     */
     public static boolean registrarUsuario(String nombre, String password) {
         return DatabaseManager.registrarUsuario(nombre, password);
     }
     
-    /**
-     * Genera una clave única para identificar un juego entre dos jugadores
-     */
     public static String generarClaveJuego(String jugador1, String jugador2) {
-        // Ordenar alfabéticamente para evitar duplicados
-        if (jugador1.compareTo(jugador2) < 0) {
-            return jugador1 + ":" + jugador2;
-        } else {
-            return jugador2 + ":" + jugador1;
-        }
+        return jugador1.compareTo(jugador2) < 0 ? 
+               jugador1 + ":" + jugador2 : 
+               jugador2 + ":" + jugador1;
+    }
+    
+    private static void inicializarServidor() {
+        DatabaseManager.inicializar();
+        poolHilos = Executors.newFixedThreadPool(MAX_HILOS);
+        
+        Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+            cerrarServidor();
+        }));
+    }
+    
+    private static void cerrarServidor() {
+        System.out.println("Cerrando servidor...");
+        poolHilos.shutdown();
+        DatabaseManager.cerrarConexion();
+        System.out.println("Servidor cerrado correctamente.");
     }
     
     public static void main(String[] args) {
-        // Inicializar la base de datos
-        DatabaseManager.inicializar();
+        inicializarServidor();
         
-        // Agregar shutdown hook para cerrar la conexión limpiamente
-        Runtime.getRuntime().addShutdownHook(new Thread(() -> {
-            DatabaseManager.cerrarConexion();
-        }));
+        int contadorClientes = 0;
         
-        int puerto = 8080;
-        int contador = 0;
-        
-        try (ServerSocket servidorSocket = new ServerSocket(puerto)) {
-            System.out.println("Servidor iniciado en el puerto " + puerto);
+        try (ServerSocket servidorSocket = new ServerSocket(PUERTO)) {
+            System.out.println("Servidor iniciado en el puerto " + PUERTO);
             
             while (true) {
                 Socket socket = servidorSocket.accept();
-                String idCliente = Integer.toString(contador);
-                UnCliente uncliente = new UnCliente(socket, idCliente);
-                Thread hilo = new Thread(uncliente);
+                String idCliente = String.valueOf(contadorClientes);
                 
-                clientes.put(idCliente, uncliente);
-                hilo.start();
-                System.out.println("Se conectó el cliente #" + contador + " (ID: " + idCliente + ")");
-                contador++;
+                UnCliente cliente = new UnCliente(socket, idCliente);
+                clientes.put(idCliente, cliente);
+                
+                poolHilos.execute(cliente);
+                
+                System.out.println("Cliente #" + contadorClientes + " conectado (ID: " + idCliente + ")");
+                contadorClientes++;
             }
         } catch (IOException e) {
             System.err.println("Error en ServidorMulti: " + e.getMessage());
+            e.printStackTrace();
+        } finally {
+            cerrarServidor();
         }
     }
 }
