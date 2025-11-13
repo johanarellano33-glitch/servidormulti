@@ -107,7 +107,7 @@ public String getGrupoActual() {
         StringBuilder bienvenida = new StringBuilder();
         bienvenida.append("\nInicio de sesión exitoso. Bienvenido ").append(idCliente).append("!\n");
         bienvenida.append("Tienes mensajes ilimitados.\n");
-        bienvenida.append("Escribe HELP para ver todos los comandos.\n");
+        bienvenida.append("Escribe AYUDA para ver todos los comandos.\n");
         salida.writeUTF(bienvenida.toString());
     }
 
