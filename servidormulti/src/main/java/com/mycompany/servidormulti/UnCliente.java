@@ -14,6 +14,10 @@ public class UnCliente implements Runnable {
     
     final DataOutputStream salida;
     final DataInputStream entrada;
+
+
+    
+    private static final int LIMITE_MENSAJES_GRATIS = 5;
     
    private String idCliente;
 private int mensajesEnviados = 0;
@@ -114,8 +118,8 @@ public String getGrupoActual() {
     @Override
     public void run() {
         try {
-            salida.writeUTF("Bienvenido. Tu ID es: " + idCliente + 
-                             ". Tienes 3 mensajes gratis. Usa 'REGISTRAR nombre password' o 'ENTRAR nombre password'.");
+           salida.writeUTF("Bienvenido. Tu ID es: " + idCliente + 
+                ". Tienes " + LIMITE_MENSAJES_GRATIS + " mensajes gratis. Usa 'REGISTRAR nombre password' o 'ENTRAR nombre password'.");
             
             while (true) {
                 String mensaje = entrada.readUTF();
@@ -810,10 +814,10 @@ public String getGrupoActual() {
                 }
                 
              
-                if (!autenticado && mensajesEnviados >= 3) {
-                    salida.writeUTF("Límite de 3 mensajes alcanzado. Debes autenticarte (ej: ENTRAR nombre password) para enviar más.");
-                    continue;
-                }
+               if (!autenticado && mensajesEnviados >= LIMITE_MENSAJES_GRATIS) {
+    salida.writeUTF("Límite de " + LIMITE_MENSAJES_GRATIS + " mensajes alcanzado. Debes autenticarte (ej: ENTRAR nombre password) para enviar más.");
+    continue;
+}
                 
                 if (!autenticado) {
                     mensajesEnviados++;
@@ -887,9 +891,10 @@ public String getGrupoActual() {
                         cliente.salida.writeUTF(mensajeBroadcast);
                     }
 
-                    if (!autenticado) {
-                        salida.writeUTF("Mensajes restantes: " + (3 - mensajesEnviados));
-                    }
+               
+if (!autenticado) {
+    salida.writeUTF("Mensajes restantes: " + (LIMITE_MENSAJES_GRATIS - mensajesEnviados));
+}
                 }
             }
         } catch (IOException ex) {
