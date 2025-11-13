@@ -27,14 +27,13 @@ public class ParaMandar implements Runnable {
                 
                 if ("salir".equalsIgnoreCase(mensaje)) {
                     System.out.println("Cerrando conexión...");
-                    // Al cerrar el socket aquí, se fuerza la desconexión
-                    // lo que terminará el hilo ParaRecibir y ClienteMulti continuará.
+                    
                     socket.close(); 
                     break;
                 }
             }
         } catch (IOException ex) {
-            // Silenciar errores comunes de cierre de socket (p. ej., "Broken pipe")
+            
             if (!socket.isClosed()) {
                 System.out.println("Error en ParaMandar: " + ex.getMessage());
             }
