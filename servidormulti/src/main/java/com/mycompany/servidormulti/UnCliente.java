@@ -190,8 +190,9 @@ public String getGrupoActual() {
     public void run() {
         try {
            salida.writeUTF("Bienvenido. Tu ID es: " + idCliente + 
-                ". Tienes " + LIMITE_MENSAJES_GRATIS + " mensajes gratis. Usa 'REGISTRAR nombre password' o 'ENTRAR nombre password'.");
-            
+    ". Tienes " + LIMITE_MENSAJES_GRATIS + " mensajes gratis.\n" +
+    "Usa '/REGISTRAR nombre password' o '/ENTRAR nombre password'.\n" +
+    "Los comandos empiezan con '/' - Ejemplo: /AYUDA");
            while (true) {
     String mensaje = entrada.readUTF();
     
