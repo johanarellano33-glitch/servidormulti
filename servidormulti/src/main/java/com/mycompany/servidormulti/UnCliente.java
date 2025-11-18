@@ -903,7 +903,7 @@ public String getGrupoActual() {
                 
              
                if (!autenticado && mensajesEnviados >= LIMITE_MENSAJES_GRATIS) {
-    salida.writeUTF("Límite de " + LIMITE_MENSAJES_GRATIS + " mensajes alcanzado. Debes autenticarte (ej: ENTRAR nombre password) para enviar más.");
+    salida.writeUTF("Límite de " + LIMITE_MENSAJES_GRATIS + " mensajes alcanzado. Debes autenticarte (ej: /ENTRAR nombre password) para enviar más.");
     continue;
 }
                 
@@ -915,7 +915,7 @@ public String getGrupoActual() {
                 if (mensaje.startsWith("@")) {
                     String[] partes = mensaje.split(" ", 2);
                     if (partes.length < 2) {
-                         salida.writeUTF("Formato privado incorrecto. Usa: @nombre mensaje");
+                         salida.writeUTF("Formato privado incorrecto. Usa: /@nombre mensaje");
                          if (!autenticado) mensajesEnviados--;
                          continue;
                     }
@@ -924,7 +924,7 @@ public String getGrupoActual() {
                     UnCliente clienteDestino = ServidorMulti.clientes.get(aQuien);
                     
                     if (clienteDestino == null) {
-                        salida.writeUTF("Error: Cliente con nombre '" + aQuien + "' no encontrado o desconectado.\nUsa ONLINE para ver usuarios conectados.");
+                        salida.writeUTF("Error: Cliente con nombre '" + aQuien + "' no encontrado o desconectado.\nUsa /LINEA para ver usuarios conectados.");
                         if (!autenticado) mensajesEnviados--;
                         continue;
                     }
