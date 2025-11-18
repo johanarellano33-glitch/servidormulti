@@ -131,7 +131,7 @@ public String getGrupoActual() {
     if (mensaje.startsWith("@")) {
         String[] partes = mensaje.split(" ", 2);
         if (partes.length < 2) {
-            salida.writeUTF("Formato privado incorrecto. Usa: @nombre mensaje");
+            salida.writeUTF("Formato privado incorrecto. Usa: /@nombre mensaje");
             if (!autenticado) mensajesEnviados--;
             return;
         }
@@ -219,7 +219,7 @@ public String getGrupoActual() {
                      
    if (comando.equals("AYUDA")) {
     if (!autenticado) {
-        salida.writeUTF("Debes iniciar sesión para ver los comandos. Usa: ENTRAR nombre password");
+        salida.writeUTF("Debes iniciar sesión para ver los comandos. Usa: /ENTRAR nombre password");
         continue;
     }
     
@@ -302,7 +302,7 @@ public String getGrupoActual() {
                     
                     if (comando.equals("REGISTRAR")) {
                         if (ServidorMulti.registrarUsuario(nombre, password)) {
-                            salida.writeUTF("Registro exitoso! Ahora usa ENTRAR " + nombre + " [tu_password]");
+                            salida.writeUTF("Registro exitoso! Ahora usa /ENTRAR " + nombre + " [tu_password]");
                         } else {
                             salida.writeUTF("Error: El nombre de usuario '" + nombre + "' ya existe.");
                         }
@@ -332,14 +332,14 @@ public String getGrupoActual() {
                     }
                     
                     if (partesComando.length != 2) {
-                        salida.writeUTF("Error de sintaxis. Usa: BLOQUEAR nombre_usuario\nPara ver usuarios disponibles usa: USUARIOS");
+                        salida.writeUTF("Error de sintaxis. Usa: /BLOQUEAR nombre_usuario\nPara ver usuarios disponibles usa: /USUARIOS");
                         continue;
                     }
                     
                     String usuarioABloquear = partesComando[1];
                     
                     if (!DatabaseManager.usuarioExiste(usuarioABloquear)) {
-                        salida.writeUTF("Error: El usuario '" + usuarioABloquear + "' no existe.\nUsa USERS para ver usuarios disponibles.");
+                        salida.writeUTF("Error: El usuario '" + usuarioABloquear + "' no existe.\nUsa /USUARIOS para ver usuarios disponibles.");
                         continue;
                     }
                     
@@ -363,7 +363,7 @@ public String getGrupoActual() {
                     }
                     
                     if (partesComando.length != 2) {
-                        salida.writeUTF("Error de sintaxis. Usa: DESBLOQUEAR nombre_usuario\nPara ver bloqueados usa: LISTADEBLOQUEADOS");
+                        salida.writeUTF("Error de sintaxis. Usa: /DESBLOQUEAR nombre_usuario\nPara ver bloqueados usa: /LISTADEBLOQUEADOS");
                         continue;
                     }
                     
@@ -406,7 +406,7 @@ public String getGrupoActual() {
                     }
                     
                     if (partesComando.length != 2) {
-                        salida.writeUTF("Error de sintaxis. Usa: JUGAR nombre_usuario");
+                        salida.writeUTF("Error de sintaxis. Usa: /JUGAR nombre_usuario");
                         continue;
                     }
                     
@@ -421,7 +421,7 @@ public String getGrupoActual() {
                 
                     UnCliente clienteOponente = ServidorMulti.clientes.get(oponente);
                     if (clienteOponente == null) {
-                        salida.writeUTF("Error: El usuario '" + oponente + "' no está conectado.\nUsa ONLINE para ver usuarios conectados.");
+                        salida.writeUTF("Error: El usuario '" + oponente + "' no está conectado.\nUsa /LINEA para ver usuarios conectados.");
                         continue;
                     }
                     
@@ -444,7 +444,7 @@ public String getGrupoActual() {
               
                     clienteOponente.invitacionPendiente = idCliente;
                     clienteOponente.salida.writeUTF("\n*** " + idCliente + " te ha invitado a jugar al GATO ***\n" +
-                                                     "Escribe ACEPTAR para jugar o RECHAZAR para declinar.");
+                                                     "Escribe /ACEPTAR para jugar o /RECHAZAR para declinar.");
                     salida.writeUTF("Invitación enviada a '" + oponente + "'. Esperando respuesta...");
                     continue;
                 }
@@ -487,7 +487,7 @@ public String getGrupoActual() {
                                        idCliente + " (" + juego.getSimbolo(idCliente) + ")\n" +
                                        "Empieza: " + juego.getTurnoActual() + "\n" +
                                        tablero +
-                                       "Usa: MOVER fila columna (ejemplo: MOVER 0 1)";
+                                       "Usa: MOVER fila columna (ejemplo: /MOVER 0 1)";
                     
                     clienteInvitador.salida.writeUTF(infoJuego);
                     this.salida.writeUTF(infoJuego);
@@ -526,7 +526,7 @@ public String getGrupoActual() {
                     }
                     
                     if (partesComando.length != 3) {
-                        salida.writeUTF("Error de sintaxis. Usa: MOVER fila columna (ejemplo: MOVER 0 1)");
+                        salida.writeUTF("Error de sintaxis. Usa: MOVER fila columna (ejemplo: /MOVER 0 1)");
                         continue;
                     }
                     
@@ -750,7 +750,7 @@ public String getGrupoActual() {
                     }
                     
                     if (partesComando.length != 2) {
-                        salida.writeUTF("Error de sintaxis. Usa: CREARGRUPO nombre_del_grupo");
+                        salida.writeUTF("Error de sintaxis. Usa: /CREARGRUPO nombre_del_grupo");
                         continue;
                     }
                     
@@ -771,19 +771,19 @@ public String getGrupoActual() {
                     }
                     
                     if (partesComando.length != 2) {
-                        salida.writeUTF("Error de sintaxis. Usa: UNIRGRUPO nombre_del_grupo");
+                        salida.writeUTF("Error de sintaxis. Usa: /UNIRGRUPO nombre_del_grupo");
                         continue;
                     }
                     
                     String nombreGrupo = partesComando[1];
                     
                     if (!DatabaseManager.grupoExiste(nombreGrupo)) {
-                        salida.writeUTF("Error: El grupo '" + nombreGrupo + "' no existe. Usa GRUPOS para ver los disponibles.");
+                        salida.writeUTF("Error: El grupo '" + nombreGrupo + "' no existe. Usa /GRUPOS para ver los disponibles.");
                         continue;
                     }
                     
                     if (DatabaseManager.unirseAGrupo(nombreGrupo, idCliente)) {
-                        salida.writeUTF("Te has unido al grupo '" + nombreGrupo + "'. Usa: GRUPO " + nombreGrupo + " para cambiar a él.");
+                        salida.writeUTF("Te has unido al grupo '" + nombreGrupo + "'. Usa: /GRUPO " + nombreGrupo + " para cambiar a él.");
                     } else {
                         salida.writeUTF("Error: Ya eres miembro de este grupo.");
                     }
@@ -797,7 +797,7 @@ public String getGrupoActual() {
                     }
                     
                     if (partesComando.length != 2) {
-                        salida.writeUTF("Error de sintaxis. Usa: SALIRGRUPO nombre_del_grupo");
+                        salida.writeUTF("Error de sintaxis. Usa: /SALIRGRUPO nombre_del_grupo");
                         continue;
                     }
                     
@@ -821,7 +821,7 @@ public String getGrupoActual() {
                     }
                     
                     if (partesComando.length != 2) {
-                        salida.writeUTF("Error de sintaxis. Usa: BORRARGRUPO nombre_del_grupo");
+                        salida.writeUTF("Error de sintaxis. Usa: /BORRARGRUPO nombre_del_grupo");
                         continue;
                     }
                     
@@ -842,7 +842,7 @@ public String getGrupoActual() {
                     }
                     
                     if (partesComando.length != 2) {
-                        salida.writeUTF("Error de sintaxis. Usa: GRUPO nombre_del_grupo");
+                        salida.writeUTF("Error de sintaxis. Usa: /GRUPO nombre_del_grupo");
                         continue;
                     }
                     
@@ -854,7 +854,7 @@ public String getGrupoActual() {
                     }
                     
                     if (!DatabaseManager.esMiembroDeGrupo(nombreGrupo, idCliente)) {
-                        salida.writeUTF("Error: No eres miembro del grupo '" + nombreGrupo + "'. Usa: UNIRGRUPO " + nombreGrupo);
+                        salida.writeUTF("Error: No eres miembro del grupo '" + nombreGrupo + "'. Usa: /UNIRGRUPO " + nombreGrupo);
                         continue;
                     }
                     
