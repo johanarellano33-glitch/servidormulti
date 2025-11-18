@@ -124,12 +124,27 @@ public String getGrupoActual() {
            salida.writeUTF("Bienvenido. Tu ID es: " + idCliente + 
                 ". Tienes " + LIMITE_MENSAJES_GRATIS + " mensajes gratis. Usa 'REGISTRAR nombre password' o 'ENTRAR nombre password'.");
             
-            while (true) {
-                String mensaje = entrada.readUTF();
-                
-                String[] partesComando = mensaje.split(" ", 3);
-                String comando = partesComando.length > 0 ? partesComando[0].toUpperCase() : "";
-
+           while (true) {
+    String mensaje = entrada.readUTF();
+    
+    if (mensaje.equalsIgnoreCase("/salir")) {
+        salida.writeUTF("Cerrando sesión...");
+        break;
+    }
+    
+    if (!mensaje.startsWith("/")) {
+        procesarMensajeNormal(mensaje);
+        continue;
+    }
+    
+    String mensajeSinBarra = mensaje.substring(1);
+    String[] partesComando = mensajeSinBarra.split(" ", 3);
+    String comando = partesComando.length > 0 ? partesComando[0].toUpperCase() : "";
+    
+    if (!comando.equals("REGISTRAR") && !comando.equals("ENTRAR") && !autenticado) {
+        salida.writeUTF("Error: Debes iniciar sesión para usar comandos. Usa: /ENTRAR nombre password");
+        continue;
+    }
              
                      
    if (comando.equals("AYUDA")) {
