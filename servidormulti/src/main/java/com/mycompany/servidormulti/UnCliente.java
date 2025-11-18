@@ -15,7 +15,10 @@ public class UnCliente implements Runnable {
     final DataOutputStream salida;
     final DataInputStream entrada;
 
-
+private static final String PREFIX_COMANDO = "/";
+private static final int MENSAJES_GRATIS = 3;
+private static final int ELEMENTOS_POR_PAGINA = 10;
+private static final String GRUPO_DEFECTO = "Todos";
     
     private static final int LIMITE_MENSAJES_GRATIS = 5;
     
