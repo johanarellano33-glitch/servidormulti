@@ -110,13 +110,14 @@ public String getGrupoActual() {
 }
 
  
-    private void enviarMensajeBienvenida() throws IOException {
-        StringBuilder bienvenida = new StringBuilder();
-        bienvenida.append("\nInicio de sesión exitoso. Bienvenido ").append(idCliente).append("!\n");
-        bienvenida.append("Tienes mensajes ilimitados.\n");
-        bienvenida.append("Escribe AYUDA para ver todos los comandos.\n");
-        salida.writeUTF(bienvenida.toString());
-    }
+   private void enviarMensajeBienvenida() throws IOException {
+    StringBuilder bienvenida = new StringBuilder();
+    bienvenida.append("\nInicio de sesión exitoso. Bienvenido ").append(idCliente).append("!\n");
+    bienvenida.append("Tienes mensajes ilimitados.\n");
+    bienvenida.append("Escribe /AYUDA para ver todos los comandos.\n");
+    bienvenida.append("Usa /SALIR para cerrar sesión.\n");
+    salida.writeUTF(bienvenida.toString());
+}
     private void procesarMensajeNormal(String mensaje) throws IOException {
     if (!autenticado && mensajesEnviados >= LIMITE_MENSAJES_GRATIS) {
         salida.writeUTF("Límite de " + LIMITE_MENSAJES_GRATIS + " mensajes alcanzado. Debes autenticarte con /ENTRAR para enviar más.");
