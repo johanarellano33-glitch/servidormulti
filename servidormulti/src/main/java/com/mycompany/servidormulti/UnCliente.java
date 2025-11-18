@@ -117,6 +117,74 @@ public String getGrupoActual() {
         bienvenida.append("Escribe AYUDA para ver todos los comandos.\n");
         salida.writeUTF(bienvenida.toString());
     }
+    private void procesarMensajeNormal(String mensaje) throws IOException {
+    if (!autenticado && mensajesEnviados >= LIMITE_MENSAJES_GRATIS) {
+        salida.writeUTF("Límite de " + LIMITE_MENSAJES_GRATIS + " mensajes alcanzado. Debes autenticarte con /ENTRAR para enviar más.");
+        return;
+    }
+    
+    if (!autenticado) {
+        mensajesEnviados++;
+    }
+    
+    if (mensaje.startsWith("@")) {
+        String[] partes = mensaje.split(" ", 2);
+        if (partes.length < 2) {
+            salida.writeUTF("Formato privado incorrecto. Usa: @nombre mensaje");
+            if (!autenticado) mensajesEnviados--;
+            return;
+        }
+        
+        String aQuien = partes[0].substring(1);
+        UnCliente clienteDestino = ServidorMulti.clientes.get(aQuien);
+        
+        if (clienteDestino == null) {
+            salida.writeUTF("Error: Cliente '" + aQuien + "' no encontrado.\nUsa /LINEA para ver usuarios conectados.");
+            if (!autenticado) mensajesEnviados--;
+            return;
+        }
+        
+        if (autenticado && DatabaseManager.estaBloqueado(aQuien, idCliente)) {
+            salida.writeUTF("No puedes enviar mensajes a '" + aQuien + "' porque te ha bloqueado.");
+            if (!autenticado) mensajesEnviados--;
+            return;
+        }
+        
+        if (autenticado && DatabaseManager.estaBloqueado(idCliente, aQuien)) {
+            salida.writeUTF("No puedes enviar mensajes a '" + aQuien + "' porque lo has bloqueado.");
+            if (!autenticado) mensajesEnviados--;
+            return;
+        }
+        
+        clienteDestino.salida.writeUTF("(PRIVADO de " + idCliente + "): " + partes[1]);
+        this.salida.writeUTF("Mensaje enviado a " + aQuien);
+    } else {
+        String mensajeBroadcast = "[" + grupoActual + "][" + idCliente + "]: " + mensaje;
+        DatabaseManager.guardarMensajeGrupo(grupoActual, idCliente, mensaje);
+        
+        for (Map.Entry<String, UnCliente> entry : ServidorMulti.clientes.entrySet()) {
+            UnCliente cliente = entry.getValue();
+            
+            if (cliente == this || !cliente.getGrupoActual().equals(grupoActual)) {
+                continue;
+            }
+            
+            if (autenticado) {
+                String nombreDestinatario = entry.getKey();
+                if (DatabaseManager.estaBloqueado(nombreDestinatario, idCliente) || 
+                    DatabaseManager.estaBloqueado(idCliente, nombreDestinatario)) {
+                    continue;
+                }
+            }
+            
+            cliente.salida.writeUTF(mensajeBroadcast);
+        }
+        
+        if (!autenticado) {
+            salida.writeUTF("Mensajes restantes: " + (LIMITE_MENSAJES_GRATIS - mensajesEnviados));
+        }
+    }
+}
 
     @Override
     public void run() {
