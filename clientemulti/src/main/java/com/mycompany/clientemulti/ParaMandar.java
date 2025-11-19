@@ -25,7 +25,7 @@ public class ParaMandar implements Runnable {
                 salida.writeUTF(mensaje);
                 salida.flush();
                 
-                if ("salir".equalsIgnoreCase(mensaje) || "/salir".equalsIgnoreCase(mensaje)) {
+                if ("/salir".equalsIgnoreCase(mensaje)) {
                     System.out.println("Cerrando conexión...");
                     socket.close();
                     break;
