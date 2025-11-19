@@ -124,6 +124,7 @@ public String getGrupoActual() {
         return;
     }
     
+    
     if (!autenticado && mensajesEnviados >= LIMITE_MENSAJES_GRATIS) {
         salida.writeUTF("Límite de " + LIMITE_MENSAJES_GRATIS + " mensajes alcanzado. Debes autenticarte con /ENTRAR para enviar más.");
         return;
@@ -186,7 +187,46 @@ public String getGrupoActual() {
             salida.writeUTF("Mensajes restantes: " + (LIMITE_MENSAJES_GRATIS - mensajesEnviados));
         }
     }
+    }
+    private void cerrarConexion() {
+    try {
+        // Limpiar juegos activos
+        if (autenticado) {
+            for (Map.Entry<String, gato> entry : ServidorMulti.juegosActivos.entrySet()) {
+                gato juego = entry.getValue();
+                if (juego.getJugador1().equals(idCliente) || juego.getJugador2().equals(idCliente)) {
+                    String oponente = juego.getJugador1().equals(idCliente) ? juego.getJugador2() : juego.getJugador1();
+                    juego.terminarJuego(idCliente);
+                    
+                    DatabaseManager.registrarVictoria(oponente);
+                    DatabaseManager.registrarDerrota(idCliente);
+                    
+                    UnCliente clienteOponente = ServidorMulti.clientes.get(oponente);
+                    if (clienteOponente != null) {
+                        try {
+                            clienteOponente.salida.writeUTF(idCliente + " se ha desconectado. Has ganado el juego por abandono.");
+                        } catch (IOException ignored) {}
+                    }
+                    
+                    ServidorMulti.juegosActivos.remove(entry.getKey());
+                }
+            }
+        }
+        
+        // Remover de la lista de clientes
+        ServidorMulti.clientes.remove(idCliente);
+        System.out.println("Cliente " + idCliente + " cerró sesión correctamente.");
+        
+        // Cerrar streams
+        if (salida != null) salida.close();
+        if (entrada != null) entrada.close();
+        
+    } catch (IOException e) {
+        System.out.println("Error al cerrar conexión de " + idCliente);
+    }
 }
+
+
 
     @Override
     public void run() {
@@ -199,9 +239,10 @@ public String getGrupoActual() {
     String mensaje = entrada.readUTF();
     
     if (mensaje.equalsIgnoreCase("/salir")) {
-        salida.writeUTF("Cerrando sesión...");
-        break;
-    }
+    salida.writeUTF("Cerrando sesión...");
+    cerrarConexion();
+    break;
+}
     
    if (!mensaje.startsWith("/")) {
     if (!autenticado && mensajesEnviados >= LIMITE_MENSAJES_GRATIS) {
