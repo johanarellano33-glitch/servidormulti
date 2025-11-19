@@ -332,20 +332,27 @@ public String getGrupoActual() {
         } else {
             salida.writeUTF("Error: El nombre de usuario '" + nombre + "' ya existe.");
         }
-    } else if (comando.equals("ENTRAR")) {
-        if (ServidorMulti.verificarCredenciales(nombre, password)) {
-            autenticado = true;
-            ServidorMulti.clientes.remove(idCliente);
-            idCliente = nombre;
-            ServidorMulti.clientes.put(idCliente, this);
-            
-            enviarMensajeBienvenida();
-            DatabaseManager.unirseAGrupo("Todos", idCliente);
-            grupoActual = "Todos";
-            System.out.println("Cliente se autenticó como " + nombre);
-        } else {
-            salida.writeUTF("Error de inicio de sesión. Credenciales incorrectas.");
+   } else if (comando.equals("ENTRAR")) {
+    if (ServidorMulti.verificarCredenciales(nombre, password)) {
+        
+        
+        if (ServidorMulti.clientes.containsKey(nombre)) {
+            salida.writeUTF("Error: El usuario '" + nombre + "' ya tiene una sesión activa. Cierra la otra sesión primero.");
+            continue;
         }
+        
+        autenticado = true;
+        ServidorMulti.clientes.remove(idCliente);
+        idCliente = nombre;
+        ServidorMulti.clientes.put(idCliente, this);
+        
+        enviarMensajeBienvenida();
+        DatabaseManager.unirseAGrupo("Todos", idCliente);
+        grupoActual = "Todos";
+        System.out.println("Cliente se autenticó como " + nombre);
+    } else {
+        salida.writeUTF("Error de inicio de sesión. Credenciales incorrectas.");
+    }
     }
     continue;
 }
