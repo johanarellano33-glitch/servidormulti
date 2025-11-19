@@ -41,7 +41,9 @@ public class ServidorMulti {
     
     private static void cerrarServidor() {
         System.out.println("Cerrando servidor...");
-        poolHilos.shutdown();
+        if (poolHilos != null) {
+            poolHilos.shutdown();
+        }
         DatabaseManager.cerrarConexion();
         System.out.println("Servidor cerrado correctamente.");
     }
@@ -63,12 +65,11 @@ public class ServidorMulti {
                 
                 poolHilos.execute(cliente);
                 
-                System.out.println("Cliente #" + contadorClientes + " conectado (ID: " + idCliente + ")");
+                System.out.println("Cliente #" + contadorClientes + " conectado (ID temp: " + idCliente + ")");
                 contadorClientes++;
             }
         } catch (IOException e) {
-            System.err.println("Error en ServidorMulti: " + e.getMessage());
-            e.printStackTrace();
+            System.out.println("El servidor se ha detenido o el puerto está ocupado.");
         } finally {
             cerrarServidor();
         }
