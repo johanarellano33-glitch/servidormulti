@@ -119,13 +119,14 @@ public String getGrupoActual() {
     salida.writeUTF(bienvenida.toString());
 }
     private void procesarMensajeNormal(String mensaje) throws IOException {
-    if (!autenticado && mensajesEnviados >= LIMITE_MENSAJES_GRATIS) {
-        salida.writeUTF("Límite de " + LIMITE_MENSAJES_GRATIS + " mensajes alcanzado. Debes autenticarte con /ENTRAR para enviar más.");
+    if (mensaje.startsWith("/")) {
+        salida.writeUTF("Comando incorrecto. Los comandos válidos empiezan con '/'. Usa /AYUDA para ver la lista.");
         return;
     }
     
-    if (!autenticado) {
-        mensajesEnviados++;
+    if (!autenticado && mensajesEnviados >= LIMITE_MENSAJES_GRATIS) {
+        salida.writeUTF("Límite de " + LIMITE_MENSAJES_GRATIS + " mensajes alcanzado. Debes autenticarte con /ENTRAR para enviar más.");
+        return;
     }
     
     if (mensaje.startsWith("@")) {
@@ -202,10 +203,14 @@ public String getGrupoActual() {
         break;
     }
     
-    if (!mensaje.startsWith("/")) {
-        procesarMensajeNormal(mensaje);
+   if (!mensaje.startsWith("/")) {
+    if (!autenticado && mensajesEnviados >= LIMITE_MENSAJES_GRATIS) {
+        salida.writeUTF("Límite de " + LIMITE_MENSAJES_GRATIS + " mensajes alcanzado. Debes autenticarte con /ENTRAR para enviar más.");
         continue;
     }
+    procesarMensajeNormal(mensaje);
+    continue;
+}
     
     String mensajeSinBarra = mensaje.substring(1);
     String[] partesComando = mensajeSinBarra.split(" ", 3);
@@ -286,43 +291,64 @@ public String getGrupoActual() {
                 }
 
              
-                if (comando.equals("REGISTRAR") || comando.equals("ENTRAR")) {
-                    if (autenticado) {
-                        salida.writeUTF("Ya estás autenticado como: " + idCliente);
-                        continue;
-                    }
+               if (comando.equals("REGISTRAR") || comando.equals("ENTRAR")) {
+    if (autenticado) {
+        salida.writeUTF("Ya estás autenticado como: " + idCliente);
+        continue;
+    }
 
-                    if (partesComando.length != 3) {
-                        salida.writeUTF("Error de sintaxis. Usa: " + comando + " nombre password");
-                        continue;
-                    }
-                    
-                    String nombre = partesComando[1];
-                    String password = partesComando[2];
-                    
-                    if (comando.equals("REGISTRAR")) {
-                        if (ServidorMulti.registrarUsuario(nombre, password)) {
-                            salida.writeUTF("Registro exitoso! Ahora usa /ENTRAR " + nombre + " [tu_password]");
-                        } else {
-                            salida.writeUTF("Error: El nombre de usuario '" + nombre + "' ya existe.");
-                        }
-                   } else if (comando.equals("ENTRAR")) {
-    if (ServidorMulti.verificarCredenciales(nombre, password)) {
-        autenticado = true;
-        ServidorMulti.clientes.remove(idCliente);
-        idCliente = nombre;
-        ServidorMulti.clientes.put(idCliente, this);
-        
-        enviarMensajeBienvenida();
-        DatabaseManager.unirseAGrupo("Todos", idCliente);
-        grupoActual = "Todos";
-        System.out.println("Cliente se autenticó como " + nombre);
-                        } else {
-                            salida.writeUTF("Error de inicio de sesión. Credenciales incorrectas.");
-                        }
-                    }
-                    continue;
-                }
+    if (partesComando.length != 3) {
+        salida.writeUTF("Error de sintaxis. Usa: /" + comando + " nombre password");
+        continue;
+    }
+    
+    String nombre = partesComando[1];
+    String password = partesComando[2];
+    
+
+    if (nombre.startsWith("/")) {
+        salida.writeUTF("Error: El nombre de usuario no puede empezar con '/'");
+        continue;
+    }
+    
+    if (nombre.length() < 3) {
+        salida.writeUTF("Error: El nombre de usuario debe tener al menos 3 caracteres.");
+        continue;
+    }
+    
+    if (nombre.contains(" ")) {
+        salida.writeUTF("Error: El nombre de usuario no puede contener espacios.");
+        continue;
+    }
+    
+    if (password.length() < 4) {
+        salida.writeUTF("Error: La contraseña debe tener al menos 4 caracteres.");
+        continue;
+    }
+    
+    if (comando.equals("REGISTRAR")) {
+        if (ServidorMulti.registrarUsuario(nombre, password)) {
+            salida.writeUTF("¡Registro exitoso! Ahora usa /ENTRAR " + nombre + " [tu_password]");
+        } else {
+            salida.writeUTF("Error: El nombre de usuario '" + nombre + "' ya existe.");
+        }
+    } else if (comando.equals("ENTRAR")) {
+        if (ServidorMulti.verificarCredenciales(nombre, password)) {
+            autenticado = true;
+            ServidorMulti.clientes.remove(idCliente);
+            idCliente = nombre;
+            ServidorMulti.clientes.put(idCliente, this);
+            
+            enviarMensajeBienvenida();
+            DatabaseManager.unirseAGrupo("Todos", idCliente);
+            grupoActual = "Todos";
+            System.out.println("Cliente se autenticó como " + nombre);
+        } else {
+            salida.writeUTF("Error de inicio de sesión. Credenciales incorrectas.");
+        }
+    }
+    continue;
+}
                 
               
                 if (comando.equals("BLOQUEAR")) {
